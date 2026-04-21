@@ -37,4 +37,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Bảng điều khiển Admin
     Route::get('/admin/dashboard-stats', [\App\Http\Controllers\Api\DashboardController::class, 'getAdminStats']);
+
+    Route::get('/roles', [\App\Http\Controllers\Api\UserController::class, 'getAllRoles']);// Lấy danh sách tất cả vai trò (Role)
 });
