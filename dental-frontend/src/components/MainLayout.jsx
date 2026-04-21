@@ -11,7 +11,8 @@ import {
   X,
   LogOut,
   FileText,    // Thêm Icon Hóa đơn
-  TrendingUp   // Thêm Icon Doanh thu
+  TrendingUp,   // Thêm Icon Doanh thu
+  ShieldCheck
 } from 'lucide-react';
 
 // Nhận thêm activeTab và setActiveTab từ App.jsx
@@ -29,7 +30,9 @@ const MainLayout = ({ children, role = 'benh_nhan', userName = 'Khách hàng', a
   // Cấu hình danh sách Menu
   const allMenuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Tổng quan', roles: ['admin', 'bac_si', 'le_tan', 'ke_toan', 'benh_nhan'] },
+
     
+    { icon: <ShieldCheck size={20} />, label: 'Quản lý tài khoản', roles: ['admin'] }, // Gọi UC2
     { icon: <Users size={20} />, label: 'Quản lý nhân sự', roles: ['admin'] },
     { icon: <Settings size={20} />, label: 'Cài đặt hệ thống', roles: ['admin'] },
     

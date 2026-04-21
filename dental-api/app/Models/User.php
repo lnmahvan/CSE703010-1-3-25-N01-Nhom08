@@ -26,6 +26,12 @@ class User extends Authenticatable
         'role',
         'status',
         'phone',
+        'username',
+        'employee_id',
+        'avatar',
+        'linked_profile_id',
+        'google_id',
+        
 
     ];
 

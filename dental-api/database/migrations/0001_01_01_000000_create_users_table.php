@@ -13,16 +13,23 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            
+            // Bổ sung đầy đủ các cột theo chuẩn đặc tả UC2.1
+            $table->string('employee_id')->nullable()->unique();
             $table->string('name');
+            $table->string('username')->unique(); 
             $table->string('email')->unique();
+            $table->string('phone')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['admin', 'bac_si', 'le_tan', 'ke_toan', 'benh_nhan'])->default('benh_nhan');
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->enum('status', ['active', 'locked'])->default('active'); // Sửa thành locked cho khớp code
+            $table->string('avatar')->nullable();
+            $table->unsignedBigInteger('linked_profile_id')->nullable();
+            $table->string('google_id')->nullable(); 
+
             $table->rememberToken();
             $table->timestamps();
-
-
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

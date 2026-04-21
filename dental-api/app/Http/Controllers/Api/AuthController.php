@@ -49,7 +49,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // 2. ĐĂNG NHẬP GOOGLE (Chỉ gửi OTP lần đầu tiên)
+    // 2. ĐĂNG NHẬP GOOGLE 
     public function googleLogin(Request $request)
     {
         try {
@@ -57,12 +57,11 @@ class AuthController extends Controller
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
-                // TRƯỜNG HỢP 1: TÀI KHOẢN ĐÃ TỒN TẠI (Đăng nhập từ lần thứ 2)
+                // TRƯỜNG HỢP 1: TÀI KHOẢN ĐÃ TỒN TẠI
                 if ($user->status === 'locked') {
                     return response()->json(['message' => 'Tài khoản đã bị khóa!'], 403);
                 }
 
-                // Cấp token và cho đăng nhập luôn, KHÔNG cần OTP
                 $token = $user->createToken('DentalProToken')->plainTextToken;
 
                 return response()->json([
@@ -73,16 +72,26 @@ class AuthController extends Controller
                 ]);
 
             } else {
-                // TRƯỜNG HỢP 2: TÀI KHOẢN CHƯA TỒN TẠI (Lần đầu đăng nhập bằng Google)
+                // TRƯỜNG HỢP 2: TÀI KHOẢN CHƯA TỒN TẠI -> TẠO MỚI
+                
+                // 1. Tự động sinh username từ email
+                $baseUsername = explode('@', $googleUser->getEmail())[0];
+                $username = $baseUsername . '_' . rand(1000, 9999);
+
+                // 2. Luôn mặc định vai trò là bệnh nhân theo đúng quy trình của Minh
+                $role = 'benh_nhan';
+
                 $user = User::create([
                     'name' => $googleUser->getName(),
+                    'username' => $username,
                     'email' => $googleUser->getEmail(),
                     'password' => Hash::make(Str::random(16)),
-                    'role' => 'benh_nhan', 
-                    'status' => 'active'
+                    'role' => $role, 
+                    'status' => 'active',
+                    'google_id' => $googleUser->getId()
                 ]);
 
-                // Bắt buộc sinh mã OTP cho lần đầu tiên
+                // Sinh mã OTP cho lần đầu tiên để xác thực email
                 $otp = rand(100000, 999999);
                 Cache::put('login_otp_' . $user->id, $otp, now()->addMinutes(5));
 
@@ -90,7 +99,6 @@ class AuthController extends Controller
                     $message->to($user->email)->subject('Xác minh Đăng nhập Google lần đầu');
                 });
 
-                // Yêu cầu Frontend mở màn hình OTP
                 return response()->json([
                     'requires_otp' => true,
                     'user_id' => $user->id,
@@ -101,8 +109,8 @@ class AuthController extends Controller
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Lỗi xác thực từ Google',
-                'error' => $e->getMessage() 
+                'message' => 'Lỗi xác thực Google, vui lòng thử lại sau.',
+                'error' => $e->getMessage()
             ], 401);
         }
     }

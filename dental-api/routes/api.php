@@ -6,26 +6,18 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\PasswordResetController;
 
 // --- NHÓM 1: CÁC ROUTE KHÔNG CẦN TOKEN (Public) ---
-
-// Bước 1: Nhập Email/Pass -> Trả về requires_otp
 Route::post('/login', [AuthController::class, 'login']);
-
-// Bước 2: Nhập mã OTP từ Mail -> Trả về Token chính thức
 Route::post('/verify-login-otp', [AuthController::class, 'verifyLoginOtp']);
-
-// Đăng nhập Google
 Route::post('/auth/google', [AuthController::class, 'googleLogin']);
 
-// UC1.2: Khôi phục mật khẩu (ĐÃ ĐƯỢC CHUYỂN RA NGOÀI VÙNG PUBLIC)
 Route::post('/password/forgot/send-otp', [PasswordResetController::class, 'sendResetOtp']);
 Route::post('/password/forgot/verify-otp', [PasswordResetController::class, 'verifyResetOtp']);
 Route::post('/password/forgot/reset', [PasswordResetController::class, 'resetPassword']);
 
-
 // --- NHÓM 2: CÁC ROUTE BẮT BUỘC PHẢI CÓ TOKEN (Private) ---
 Route::middleware('auth:sanctum')->group(function () {
     
-    // UC1.2 Đăng xuất
+    // Đăng xuất
     Route::post('/logout', [AuthController::class, 'logout']);
     
     // Lấy thông tin cá nhân
@@ -34,6 +26,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // UC2: Quản lý người dùng
-    Route::get('/users', [UserController::class, 'index']);
-    Route::put('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']);
+    Route::get('/users', [UserController::class, 'index']);// Danh sách user, hỗ trợ tìm kiếm và lọc
+    Route::post('/users', [UserController::class, 'store']); // Thêm mới user
+    Route::put('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']);// Khóa/Mở khóa tài khoản
+    Route::put('/users/{id}', [UserController::class, 'update']);// Cập nhật thông tin user
+    Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']); // Đặt lại mật khẩu
+
+    // Bảng điều khiển Admin
+    Route::get('/admin/dashboard-stats', [\App\Http\Controllers\Api\DashboardController::class, 'getAdminStats']);
 });
