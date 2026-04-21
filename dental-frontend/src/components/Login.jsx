@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Lock, Mail, Eye, EyeOff, ShieldCheck, AlertCircle, ArrowLeft, Smartphone } from 'lucide-react';
 import axios from 'axios';
 import { useGoogleLogin } from '@react-oauth/google';
-import ForgotPassword from './ForgotPassword'; // IMPORT COMPONENT QUÊN MẬT KHẨU
+import ForgotPassword from './ForgotPassword'; 
 
 const Login = ({ onLoginSuccess }) => {
   const [view, setView] = useState('login'); 
-  const [isForgotPassword, setIsForgotPassword] = useState(false); // STATE ĐIỀU HƯỚNG QUÊN MẬT KHẨU
+  const [isForgotPassword, setIsForgotPassword] = useState(false); 
   
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -38,7 +38,7 @@ const Login = ({ onLoginSuccess }) => {
     } finally { setIsLoading(false); }
   };
 
-  // 2. Submit bằng Google
+  // 2. Submit bằng Google (ĐÃ CẬP NHẬT LOGIC)
   const loginWithGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setIsLoading(true); setError('');
@@ -47,10 +47,16 @@ const Login = ({ onLoginSuccess }) => {
           access_token: tokenResponse.access_token
         });
 
+        // Backend kiểm tra xem có cần OTP không
         if (response.data.requires_otp) {
+          // Lần đầu đăng nhập -> Nhảy sang màn hình OTP
           setTempUserId(response.data.user_id);
           setEmail(response.data.email); 
           setView('otp');
+        } else {
+          // Đã từng đăng nhập -> Đăng nhập thành công luôn
+          localStorage.setItem('token', response.data.token);
+          onLoginSuccess(response.data.user.email, response.data.user.role, response.data.user.name);
         }
       } catch (err) {
         console.error("Google Lỗi:", err.response?.data);
@@ -72,13 +78,12 @@ const Login = ({ onLoginSuccess }) => {
       });
 
       localStorage.setItem('token', response.data.token);
-      onLoginSuccess(response.data.user.email, response.data.user.role);
+      onLoginSuccess(response.data.user.email, response.data.user.role, response.data.user.name);
     } catch (err) {
       setError(err.response?.data?.message || 'Mã xác minh không đúng!');
     } finally { setIsLoading(false); }
   };
 
-  // NẾU BẤM QUÊN MẬT KHẨU -> RENDER GIAO DIỆN KHÔI PHỤC
   if (isForgotPassword) {
     return <ForgotPassword onBackToLogin={() => setIsForgotPassword(false)} />;
   }
@@ -145,7 +150,6 @@ const Login = ({ onLoginSuccess }) => {
                   </button>
                 </div>
                 
-                {/* NÚT QUÊN MẬT KHẨU THÊM Ở ĐÂY */}
                 <div className="text-right mt-2">
                   <button 
                     type="button" 

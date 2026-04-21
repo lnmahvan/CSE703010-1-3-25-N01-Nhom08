@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    // 1. ĐĂNG NHẬP THƯỜNG
+    // 1. ĐĂNG NHẬP THƯỜNG (Vẫn giữ nguyên bắt buộc OTP mỗi lần đăng nhập)
     public function login(Request $request) {
         $loginData = $request->input('email'); 
         $password = $request->input('password');
@@ -49,14 +49,31 @@ class AuthController extends Controller
         ]);
     }
 
-    // 2. ĐĂNG NHẬP GOOGLE (Cũng bắt buộc OTP)
+    // 2. ĐĂNG NHẬP GOOGLE (Chỉ gửi OTP lần đầu tiên)
     public function googleLogin(Request $request)
     {
         try {
             $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->access_token);
             $user = User::where('email', $googleUser->getEmail())->first();
 
-            if (!$user) {
+            if ($user) {
+                // TRƯỜNG HỢP 1: TÀI KHOẢN ĐÃ TỒN TẠI (Đăng nhập từ lần thứ 2)
+                if ($user->status === 'locked') {
+                    return response()->json(['message' => 'Tài khoản đã bị khóa!'], 403);
+                }
+
+                // Cấp token và cho đăng nhập luôn, KHÔNG cần OTP
+                $token = $user->createToken('DentalProToken')->plainTextToken;
+
+                return response()->json([
+                    'requires_otp' => false,
+                    'message' => 'Đăng nhập thành công',
+                    'token' => $token,
+                    'user' => $user
+                ]);
+
+            } else {
+                // TRƯỜNG HỢP 2: TÀI KHOẢN CHƯA TỒN TẠI (Lần đầu đăng nhập bằng Google)
                 $user = User::create([
                     'name' => $googleUser->getName(),
                     'email' => $googleUser->getEmail(),
@@ -64,24 +81,23 @@ class AuthController extends Controller
                     'role' => 'benh_nhan', 
                     'status' => 'active'
                 ]);
-            } elseif ($user->status === 'locked') {
-                return response()->json(['message' => 'Tài khoản đã bị khóa!'], 403);
+
+                // Bắt buộc sinh mã OTP cho lần đầu tiên
+                $otp = rand(100000, 999999);
+                Cache::put('login_otp_' . $user->id, $otp, now()->addMinutes(5));
+
+                Mail::raw("Mã xác minh Google Login Dental Pro của bạn là: $otp", function($message) use ($user) {
+                    $message->to($user->email)->subject('Xác minh Đăng nhập Google lần đầu');
+                });
+
+                // Yêu cầu Frontend mở màn hình OTP
+                return response()->json([
+                    'requires_otp' => true,
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'message' => 'Vui lòng kiểm tra email để lấy mã xác nhận'
+                ]);
             }
-
-            // KHÔNG CẤP TOKEN NGAY - Bắt buộc sinh mã OTP
-            $otp = rand(100000, 999999);
-            Cache::put('login_otp_' . $user->id, $otp, now()->addMinutes(5));
-
-            Mail::raw("Mã xác minh Google Login Dental Pro của bạn là: $otp", function($message) use ($user) {
-                $message->to($user->email)->subject('Xác minh Đăng nhập Google');
-            });
-
-            // Trả về yêu cầu OTP giống login thường
-            return response()->json([
-                'requires_otp' => true,
-                'user_id' => $user->id,
-                'email' => $user->email
-            ]);
 
         } catch (\Exception $e) {
             return response()->json([

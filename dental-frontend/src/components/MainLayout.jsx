@@ -9,44 +9,44 @@ import {
   Bell,
   Menu,
   X,
-  LogOut // Bổ sung icon Đăng xuất
+  LogOut,
+  FileText,    // Thêm Icon Hóa đơn
+  TrendingUp   // Thêm Icon Doanh thu
 } from 'lucide-react';
 
-// Nhận thêm prop 'role' và 'userName' từ App.jsx
-const MainLayout = ({ children, role = 'benh_nhan', userName = 'Khách hàng' }) => {
+// Nhận thêm activeTab và setActiveTab từ App.jsx
+const MainLayout = ({ children, role = 'benh_nhan', userName = 'Khách hàng', activeTab, setActiveTab }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
-  // 1. CHUẨN HÓA TÊN VAI TRÒ ĐỂ HIỂN THỊ LÊN HEADER
   const roleNames = {
     admin: 'Quản trị viên',
     bac_si: 'Bác sĩ chuyên khoa',
     le_tan: 'Bộ phận Lễ tân',
+    ke_toan: 'Kế toán', // Đã có kế toán
     benh_nhan: 'Bệnh nhân'
   };
 
-  // 2. PHÂN QUYỀN THANH MENU
-  // Cấu hình menu tổng, mục nào có tên role trong mảng 'roles' thì người đó mới được thấy
+  // Cấu hình danh sách Menu
   const allMenuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Tổng quan', active: true, roles: ['admin', 'bac_si', 'le_tan', 'benh_nhan'] },
+    { icon: <LayoutDashboard size={20} />, label: 'Tổng quan', roles: ['admin', 'bac_si', 'le_tan', 'ke_toan', 'benh_nhan'] },
     
-    // Menu cho Quản lý
-    { icon: <Users size={20} />, label: 'Quản lý nhân sự', active: false, roles: ['admin'] },
-    { icon: <Settings size={20} />, label: 'Cài đặt hệ thống', active: false, roles: ['admin'] },
+    { icon: <Users size={20} />, label: 'Quản lý nhân sự', roles: ['admin'] },
+    { icon: <Settings size={20} />, label: 'Cài đặt hệ thống', roles: ['admin'] },
     
-    // Menu nghiệp vụ phòng khám
-    { icon: <Users size={20} />, label: 'Danh sách bệnh nhân', active: false, roles: ['admin', 'bac_si', 'le_tan'] },
-    { icon: <Calendar size={20} />, label: 'Lịch hẹn phòng khám', active: false, roles: ['admin', 'bac_si', 'le_tan'] },
-    { icon: <ClipboardList size={20} />, label: 'Quản lý bệnh án', active: false, roles: ['admin', 'bac_si'] },
+    { icon: <Users size={20} />, label: 'Danh sách bệnh nhân', roles: ['admin', 'bac_si', 'le_tan'] },
+    { icon: <Calendar size={20} />, label: 'Lịch hẹn phòng khám', roles: ['admin', 'bac_si', 'le_tan'] },
+    { icon: <ClipboardList size={20} />, label: 'Quản lý bệnh án', roles: ['admin', 'bac_si'] },
     
-    // Menu dành riêng cho Khách hàng/Bệnh nhân
-    { icon: <Calendar size={20} />, label: 'Lịch hẹn của tôi', active: false, roles: ['benh_nhan'] },
-    { icon: <ClipboardList size={20} />, label: 'Hồ sơ sức khỏe', active: false, roles: ['benh_nhan'] },
+    // 2 MENU MỚI CHO KẾ TOÁN VÀ ADMIN
+    { icon: <FileText size={20} />, label: 'Quản lý hóa đơn', roles: ['admin', 'ke_toan'] },
+    { icon: <TrendingUp size={20} />, label: 'Báo cáo doanh thu', roles: ['admin', 'ke_toan'] },
+    
+    { icon: <Calendar size={20} />, label: 'Lịch hẹn của tôi', roles: ['benh_nhan'] },
+    { icon: <ClipboardList size={20} />, label: 'Hồ sơ sức khỏe', roles: ['benh_nhan'] },
   ];
 
-  // Lọc ra các menu mà role hiện tại được phép xem
   const authorizedMenus = allMenuItems.filter(item => item.roles.includes(role));
 
-  // 3. HÀM XỬ LÝ ĐĂNG XUẤT
   const handleLogout = () => {
     localStorage.removeItem('token');
     window.location.reload(); 
@@ -68,8 +68,9 @@ const MainLayout = ({ children, role = 'benh_nhan', userName = 'Khách hàng' })
           {authorizedMenus.map((item, index) => (
             <div 
               key={index}
+              onClick={() => setActiveTab && setActiveTab(item.label)} // Lệnh báo chuyển Tab
               className={`flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all ${
-                item.active 
+                activeTab === item.label 
                   ? 'bg-teal-600 text-white shadow-lg shadow-teal-900/50' 
                   : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
@@ -80,7 +81,7 @@ const MainLayout = ({ children, role = 'benh_nhan', userName = 'Khách hàng' })
           ))}
         </nav>
 
-        {/* Nút Đăng xuất ở cuối Sidebar */}
+        {/* Nút Đăng xuất */}
         <div className="p-4 border-t border-slate-800">
           <button 
             onClick={handleLogout}
@@ -101,14 +102,13 @@ const MainLayout = ({ children, role = 'benh_nhan', userName = 'Khách hàng' })
             {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
-          {/* Thanh tìm kiếm - Ẩn đi nếu là bệnh nhân */}
           <div className="flex-1 max-w-md mx-8">
             {role !== 'benh_nhan' && (
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Tìm kiếm bệnh nhân, hồ sơ..." 
+                  placeholder="Tìm kiếm..." 
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none text-sm transition-all"
                 />
               </div>
@@ -122,12 +122,11 @@ const MainLayout = ({ children, role = 'benh_nhan', userName = 'Khách hàng' })
             </button>
             <div className="flex items-center gap-3 border-l pl-6 border-slate-200">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-slate-900">{userName}</p>
-                {/* Tự động hiển thị tên Role bằng Tiếng Việt */}
+                <p className="text-sm font-bold text-slate-900">{userName || 'Người dùng'}</p>
                 <p className="text-xs font-medium text-teal-600">{roleNames[role] || 'Người dùng'}</p>
               </div>
               <div className="w-10 h-10 bg-slate-100 rounded-full border-2 border-teal-500 flex items-center justify-center text-teal-700 font-bold">
-                {userName.charAt(0).toUpperCase()}
+                {userName ? userName.charAt(0).toUpperCase() : 'U'}
               </div>
             </div>
           </div>
@@ -136,12 +135,7 @@ const MainLayout = ({ children, role = 'benh_nhan', userName = 'Khách hàng' })
         {/* Content View */}
         <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
           <div className="max-w-7xl mx-auto">
-            {children || (
-              <div className="bg-white p-12 rounded-3xl border border-dashed border-slate-300 flex flex-col items-center text-slate-400">
-                <LayoutDashboard size={48} className="mb-4 opacity-20" />
-                <p className="text-lg font-medium">Nội dung sẽ hiển thị tại đây</p>
-              </div>
-            )}
+            {children}
           </div>
         </main>
       </div>
