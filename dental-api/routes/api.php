@@ -30,7 +30,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users', [UserController::class, 'store']); // Thêm mới user
     Route::put('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']);// Khóa/Mở khóa tài khoản
     Route::put('/users/{id}', [UserController::class, 'update']);// Cập nhật thông tin user
-    Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']); // Đặt lại mật khẩu
+    // BƯỚC 17-18: Đặt lại mật khẩu (Gửi OTP và Xác nhận)
+    Route::post('/users/{id}/send-reset-otp', [UserController::class, 'sendResetOtp']);// Gửi OTP đặt lại mật khẩu
+    Route::post('/users/{id}/verify-reset', [UserController::class, 'verifyAndResetPassword']);// Đặt lại mật khẩu
+    Route::get('/users/history', [UserController::class, 'getHistory']);// Lấy lịch sử hoạt động của user (đăng nhập, thay đổi mật khẩu, v.v.)
 
     // Bảng điều khiển Admin
     Route::get('/admin/dashboard-stats', [\App\Http\Controllers\Api\DashboardController::class, 'getAdminStats']);

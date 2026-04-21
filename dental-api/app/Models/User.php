@@ -31,6 +31,7 @@ class User extends Authenticatable
         'avatar',
         'linked_profile_id',
         'google_id',
+
         
 
     ];
@@ -56,5 +57,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function roles() {
+        return $this->belongsToMany(Role::class);
+    }
+
+    public function hasRole($roleSlug) {
+        return $this->roles->contains('slug', $roleSlug);
     }
 }
