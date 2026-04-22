@@ -8,7 +8,7 @@
 
 #### Bước 1: Di chuyển vào thư mục backend
 ```bash
-cd dental-api
+cd server
 ```
 
 #### Bước 2: Cài đặt Composer dependencies
@@ -54,7 +54,7 @@ Backend chạy tại: **http://localhost:8000**
 
 #### Bước 1: Di chuyển vào thư mục frontend
 ```bash
-cd ../dental-frontend
+cd client
 ```
 
 #### Bước 2: Cài đặt NPM dependencies

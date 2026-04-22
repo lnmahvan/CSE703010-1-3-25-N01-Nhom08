@@ -1,49 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { 
-  Search, UserPlus, Edit, Lock, Unlock, KeyRound, X, ChevronLeft, ChevronRight, History
-} from 'lucide-react';
+import { Search, UserPlus, Edit, Lock, Unlock, KeyRound, X, ChevronLeft, ChevronRight, History } from 'lucide-react';
+import { getUsers, createUser, updateUser, toggleUserStatus, sendResetOtp, verifyAndResetPassword, getAllRoles, getAuditHistory } from '@/api/userApi';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [availableRoles, setAvailableRoles] = useState([]); // THÊM: Chứa danh sách vai trò
+  const [availableRoles, setAvailableRoles] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // States cho Phân trang
+
+  // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // States cho Lọc & Tìm kiếm
+  // Lọc & Tìm kiếm
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRoleId, setFilterRoleId] = useState(''); // THAY ĐỔI: Thành role_id
+  const [filterRoleId, setFilterRoleId] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
-  // States cho Modal Thêm/Sửa
+  // Modal Thêm/Sửa
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     id: null, name: '', username: '', email: '', phone: '', password: '', role_id: '', status: 'active', linked_profile_id: ''
   });
 
-  // States cho Modal Lịch sử (Dữ liệu thật)
+  // Modal Lịch sử
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyLogs, setHistoryLogs] = useState([]);
 
-  // States cho Modal Reset Mật Khẩu (Luồng 3 Bước)
+  // Modal Reset Mật Khẩu (3 bước)
   const [resetModal, setResetModal] = useState({ show: false, user: null, step: 1 });
   const [resetForm, setResetForm] = useState({ otp: '', newPassword: '' });
 
-  const getAuthConfig = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  });
+  // --- GỌI API ---
 
-  // --- HÀM GỌI API ---
-
-  // Lấy danh sách Vai trò
+  // Lấy danh sách Vai trò từ bảng roles
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await axios.get('http://localhost:8000/api/roles', getAuthConfig());
+        const res = await getAllRoles();
         setAvailableRoles(res.data);
       } catch (error) {
         console.error("Lỗi lấy roles:", error);
@@ -56,11 +50,8 @@ const UserManagement = () => {
   const fetchUsers = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8000/api/users?page=${page}`, {
-        params: { search: searchTerm, role_id: filterRoleId, status: filterStatus },
-        ...getAuthConfig()
-      });
-      setUsers(response.data.data); 
+      const response = await getUsers({ page, search: searchTerm, role_id: filterRoleId, status: filterStatus });
+      setUsers(response.data.data);
       setCurrentPage(response.data.current_page);
       setTotalPages(response.data.last_page);
     } catch (error) {
@@ -70,35 +61,31 @@ const UserManagement = () => {
     }
   };
 
-  // Lấy lịch sử thay đổi từ Database
+  // Lấy lịch sử thay đổi
   const fetchHistory = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/users/history', getAuthConfig());
+      const res = await getAuditHistory();
       setHistoryLogs(res.data);
     } catch (error) {
       console.error("Lỗi lấy lịch sử:", error);
     }
   };
 
-  // --- EFFECT XỬ LÝ TÌM KIẾM & LỌC ---
+  // Effect lọc theo Role/Status
+  useEffect(() => { fetchUsers(1); }, [filterRoleId, filterStatus]);
 
+  // Effect tìm kiếm với debounce
   useEffect(() => {
-    fetchUsers(1);
-  }, [filterRoleId, filterStatus]);
-
-  useEffect(() => {
-    const delaySearch = setTimeout(() => {
-      fetchUsers(1);
-    }, 500); 
+    const delaySearch = setTimeout(() => { fetchUsers(1); }, 500);
     return () => clearTimeout(delaySearch);
   }, [searchTerm]);
 
-  // --- XỬ LÝ THAO TÁC TÀI KHOẢN ---
+  // --- THAO TÁC TÀI KHOẢN ---
 
   const handleToggleStatus = async (user) => {
     if (!window.confirm(`Xác nhận ${user.status === 'active' ? 'khóa' : 'mở khóa'} tài khoản ${user.username}?`)) return;
     try {
-      const res = await axios.put(`http://localhost:8000/api/users/${user.id}/toggle-status`, {}, getAuthConfig());
+      const res = await toggleUserStatus(user.id);
       alert(res.data.message);
       fetchUsers(currentPage);
     } catch (error) {
@@ -111,10 +98,10 @@ const UserManagement = () => {
     if (!formData.role_id) return alert("Vui lòng chọn vai trò!");
     try {
       if (isEditing) {
-        await axios.put(`http://localhost:8000/api/users/${formData.id}`, formData, getAuthConfig());
+        await updateUser(formData.id, formData);
         alert('Cập nhật thành công!');
       } else {
-        await axios.post('http://localhost:8000/api/users', formData, getAuthConfig());
+        await createUser(formData);
         alert('Tạo tài khoản mới thành công!');
       }
       setShowModal(false);
@@ -124,7 +111,7 @@ const UserManagement = () => {
     }
   };
 
-  // --- XỬ LÝ ĐẶT LẠI MẬT KHẨU (3 BƯỚC) ---
+  // --- ĐẶT LẠI MẬT KHẨU (3 BƯỚC) ---
 
   const openResetModal = (user) => {
     setResetModal({ show: true, user: user, step: 1 });
@@ -133,7 +120,7 @@ const UserManagement = () => {
 
   const handleSendOtp = async () => {
     try {
-      await axios.post(`http://localhost:8000/api/users/${resetModal.user.id}/send-reset-otp`, {}, getAuthConfig());
+      await sendResetOtp(resetModal.user.id);
       alert('Đã gửi mã OTP về email thành công!');
       setResetModal({ ...resetModal, step: 2 });
     } catch (error) {
@@ -144,10 +131,7 @@ const UserManagement = () => {
   const handleVerifyAndReset = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`http://localhost:8000/api/users/${resetModal.user.id}/verify-reset`, {
-        otp: resetForm.otp,
-        new_password: resetForm.newPassword
-      }, getAuthConfig());
+      const res = await verifyAndResetPassword(resetModal.user.id, resetForm.otp, resetForm.newPassword);
       alert(res.data.message);
       setResetModal({ show: false, user: null, step: 1 });
     } catch (error) {
@@ -157,19 +141,14 @@ const UserManagement = () => {
 
   return (
     <div className="animate-in fade-in duration-500 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden relative">
-      
-      {/* THANH CÔNG CỤ (HEADER) */}
+
+      {/* THANH CÔNG CỤ */}
       <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-50/50">
         <h3 className="text-xl font-bold text-slate-800">Quản lý Tài khoản</h3>
-        
         <div className="flex gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
             <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
-            <input 
-              type="text" placeholder="Tìm tên, username, mã..." 
-              value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none text-sm"
-            />
+            <input type="text" placeholder="Tìm tên, username, mã..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none text-sm" />
           </div>
 
           <select value={filterRoleId} onChange={(e) => setFilterRoleId(e.target.value)} className="px-4 py-2 border rounded-xl outline-none text-sm bg-white">
@@ -327,14 +306,12 @@ const UserManagement = () => {
                 <label className="text-sm font-bold text-slate-700 block mb-1">Số điện thoại</label>
                 <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border rounded-xl outline-none focus:border-teal-500" />
               </div>
-              
               {!isEditing && (
                 <div className="col-span-2 md:col-span-1">
-                  <label className="text-sm font-bold text-slate-700 block mb-1">Mật khẩu *</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-1">Mật khẩu * (Hoa, thường, số, ký tự ĐB)</label>
                   <input required type="text" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border rounded-xl outline-none focus:border-teal-500" />
                 </div>
               )}
-
               <div className="col-span-2 md:col-span-1">
                 <label className="text-sm font-bold text-slate-700 block mb-1">Vai trò *</label>
                 <select required value={formData.role_id} onChange={e => setFormData({...formData, role_id: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border rounded-xl outline-none focus:border-teal-500">
@@ -344,7 +321,6 @@ const UserManagement = () => {
                   ))}
                 </select>
               </div>
-
               <div className="col-span-2">
                 <label className="text-sm font-bold text-slate-700 block mb-1">Hồ sơ liên kết (Theo vai trò)</label>
                 <select value={formData.linked_profile_id} onChange={e => setFormData({...formData, linked_profile_id: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border rounded-xl outline-none focus:border-teal-500">
@@ -353,7 +329,6 @@ const UserManagement = () => {
                   <option value="2">LT. Trần Thị B (Mẫu)</option>
                 </select>
               </div>
-
               <div className="col-span-2 mt-4">
                 <button type="submit" className="w-full bg-slate-900 hover:bg-teal-600 text-white font-bold py-3.5 rounded-xl transition-colors">
                   {isEditing ? 'Lưu thay đổi' : 'Tạo tài khoản'}
@@ -393,14 +368,10 @@ const UserManagement = () => {
                   ) : (
                     historyLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 text-sm text-slate-500">
-                          {new Date(log.created_at).toLocaleString('vi-VN')}
-                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-500">{new Date(log.created_at).toLocaleString('vi-VN')}</td>
                         <td className="px-6 py-4 font-medium text-slate-800">{log.admin_name}</td>
                         <td className="px-6 py-4">
-                          <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-600">
-                            {log.action}
-                          </span>
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-600">{log.action}</span>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">{log.details}</td>
                       </tr>
@@ -409,11 +380,9 @@ const UserManagement = () => {
                 </tbody>
               </table>
             </div>
-            
+
             <div className="mt-6 text-right">
-              <button onClick={() => setShowHistoryModal(false)} className="bg-slate-900 text-white px-6 py-2 rounded-xl font-bold hover:bg-slate-800 transition-colors">
-                Đóng
-              </button>
+              <button onClick={() => setShowHistoryModal(false)} className="bg-slate-900 text-white px-6 py-2 rounded-xl font-bold hover:bg-slate-800 transition-colors">Đóng</button>
             </div>
           </div>
         </div>
