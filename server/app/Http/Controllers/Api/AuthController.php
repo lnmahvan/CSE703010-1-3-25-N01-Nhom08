@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\Role;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
@@ -63,35 +64,41 @@ class AuthController extends Controller
                 }
 
                 $token = $user->createToken('DentalProToken')->plainTextToken;
+                $user->load('roles');
 
                 return response()->json([
                     'requires_otp' => false,
-                    'message' => 'Đăng nhập thành công',
-                    'token' => $token,
-                    'user' => $user
+                    'message'      => 'Đăng nhập thành công',
+                    'token'        => $token,
+                    'user'         => array_merge($user->toArray(), [
+                        'role' => $user->roles->first()?->slug ?? ''
+                    ])
                 ]);
 
             } else {
                 // TRƯỜNG HỢP 2: TÀI KHOẢN CHƯA TỒN TẠI -> TẠO MỚI
-                
+
                 // 1. Tự động sinh username từ email
                 $baseUsername = explode('@', $googleUser->getEmail())[0];
                 $username = $baseUsername . '_' . rand(1000, 9999);
 
-                // 2. Luôn mặc định vai trò là bệnh nhân theo đúng quy trình của Minh
-                $role = 'benh_nhan';
-
+                // 2. Tạo user — KHÔNG có cột 'role' (đã bị drop, dùng bảng roles)
                 $user = User::create([
-                    'name' => $googleUser->getName(),
-                    'username' => $username,
-                    'email' => $googleUser->getEmail(),
-                    'password' => Hash::make(Str::random(16)),
-                    'role' => $role, 
-                    'status' => 'active',
+                    'name'      => $googleUser->getName(),
+                    'username'  => $username,
+                    'email'     => $googleUser->getEmail(),
+                    'password'  => Hash::make(Str::random(16)),
+                    'status'    => 'active',
                     'google_id' => $googleUser->getId()
                 ]);
 
-                // Sinh mã OTP cho lần đầu tiên để xác thực email
+                // 3. Gắn vai trò 'benh_nhan' vào bảng pivot role_user
+                $benhNhanRole = Role::where('slug', 'benh_nhan')->first();
+                if ($benhNhanRole) {
+                    $user->roles()->attach($benhNhanRole->id);
+                }
+
+                // 4. Sinh mã OTP xác thực lần đầu
                 $otp = rand(100000, 999999);
                 Cache::put('login_otp_' . $user->id, $otp, now()->addMinutes(5));
 
@@ -101,9 +108,9 @@ class AuthController extends Controller
 
                 return response()->json([
                     'requires_otp' => true,
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'message' => 'Vui lòng kiểm tra email để lấy mã xác nhận'
+                    'user_id'      => $user->id,
+                    'email'        => $user->email,
+                    'message'      => 'Vui lòng kiểm tra email để lấy mã xác nhận'
                 ]);
             }
 
@@ -127,15 +134,17 @@ class AuthController extends Controller
 
         if ($cachedOtp && $cachedOtp == $request->otp) {
             Cache::forget('login_otp_' . $request->user_id);
-            $user = User::find($request->user_id);
-            
+            $user = User::with('roles')->find($request->user_id);
+
             // Cấp token chính thức
             $token = $user->createToken('DentalProToken')->plainTextToken;
 
             return response()->json([
                 'message' => "Chào mừng {$user->name} quay trở lại",
-                'token' => $token,
-                'user' => $user
+                'token'   => $token,
+                'user'    => array_merge($user->toArray(), [
+                    'role' => $user->roles->first()?->slug ?? ''
+                ])
             ], 200);
         }
 

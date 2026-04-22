@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             
-            // Bổ sung đầy đủ các cột theo chuẩn đặc tả UC2.1
+            // Thông tin nghiệp vụ
             $table->string('employee_id')->nullable()->unique();
             $table->string('name');
             $table->string('username')->unique(); 
@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('phone')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['admin', 'bac_si', 'le_tan', 'ke_toan', 'benh_nhan'])->default('benh_nhan');
-            $table->enum('status', ['active', 'locked'])->default('active'); // Sửa thành locked cho khớp code
+            // Cột 'role' đã được chuyển sang bảng roles (quan hệ nhiều-nhiều)
+            $table->enum('status', ['active', 'locked'])->default('active');
             $table->string('avatar')->nullable();
             $table->unsignedBigInteger('linked_profile_id')->nullable();
             $table->string('google_id')->nullable(); 

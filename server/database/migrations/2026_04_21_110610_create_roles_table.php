@@ -27,10 +27,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Xóa cột role (Enum) cũ trong bảng users
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
-        });
+        // Cột role enum cũ đã được loại bỏ trực tiếp trong migration create_users_table
     }
 
     /**
