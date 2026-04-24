@@ -3,63 +3,62 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Role; // THÊM MODEL ROLE
 use App\Models\AuditLog;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
-    // API CUNG CẤP DANH SÁCH ROLE CHO FRONTEND
     public function getAllRoles()
     {
+        Gate::authorize('viewAny', User::class);
+
         return response()->json(Role::all());
     }
 
-    public function getHistory(Request $request)
+    public function getHistory()
     {
-        // Kiểm tra quyền Admin qua bảng roles
-        if (!$request->user()->roles()->where('slug', 'admin')->exists()) {
-            return response()->json(['message' => 'Không có quyền truy cập'], 403);
-        }
-        
+        Gate::authorize('viewAny', User::class);
+
         return response()->json(AuditLog::orderBy('id', 'desc')->get());
     }
 
     public function index(Request $request)
     {
-        if (!$request->user()->roles()->where('slug', 'admin')->exists()) {
-            return response()->json(['message' => 'Không có quyền truy cập'], 403);
-        }
+        Gate::authorize('viewAny', User::class);
 
-        // Kéo thêm bảng roles
+        $request->validate([
+            'role_id' => 'nullable|integer|exists:roles,id',
+            'status' => 'nullable|in:active,locked',
+            'search' => 'nullable|string|max:255',
+        ]);
+
         $query = User::with('roles');
 
-        // Lọc theo role_id thay vì role
-        if ($request->has('role_id') && $request->role_id != '') {
-            $query->whereHas('roles', function($q) use ($request) {
+        if ($request->filled('role_id')) {
+            $query->whereHas('roles', function ($q) use ($request) {
                 $q->where('roles.id', $request->role_id);
             });
         }
 
-        if ($request->has('status') && $request->status != '') {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
         $search = $request->input('search');
-        if (!empty($search)) {
-            $query->where(function($q) use ($search) {
+        if (! empty($search)) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('username', 'like', "%{$search}%")
-                  ->orWhere('employee_id', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%")
+                    ->orWhere('employee_id', 'like', "%{$search}%");
             });
         }
 
@@ -68,35 +67,28 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        if (!$request->user()->roles()->where('slug', 'admin')->exists()) {
-            return response()->json(['message' => 'Không có quyền truy cập'], 403);
-        }
+        Gate::authorize('create', User::class);
 
         $request->validate([
-            'name' => 'required|string',
-            'username' => 'required|string|unique:users',
-            'email' => 'required|email|unique:users',
-            'phone' => 'nullable|string|unique:users',
-            'password' => 'required|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/', 
-            'role_id' => 'required|exists:roles,id', // Đổi thành role_id
-            'linked_profile_id' => 'nullable|integer'
-        ], [
-            'username.unique' => 'Tên đăng nhập đã tồn tại',
-            'email.unique' => 'Email đã được sử dụng',
-            'phone.unique' => 'Số điện thoại đã được sử dụng',
-            'password.regex' => 'Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt'
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users',
+            'email' => 'required|email|max:255|unique:users',
+            'phone' => 'nullable|string|max:20|unique:users',
+            'password' => 'required|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
+            'role_id' => 'required|integer|exists:roles,id',
+            'linked_profile_id' => 'nullable|integer',
         ]);
 
         $role = Role::findOrFail($request->role_id);
-        $prefixes = ['admin'=>'AD', 'bac_si'=>'BS', 'le_tan'=>'LT', 'ke_toan'=>'KT', 'benh_nhan'=>'BN'];
+        $prefixes = ['admin' => 'AD', 'bac_si' => 'BS', 'le_tan' => 'LT', 'ke_toan' => 'KT', 'benh_nhan' => 'BN'];
         $prefix = $prefixes[$role->slug] ?? 'NV';
-        
-        $lastUser = User::whereHas('roles', function($q) use ($role) {
+
+        $lastUser = User::whereHas('roles', function ($q) use ($role) {
             $q->where('roles.id', $role->id);
         })->orderBy('id', 'desc')->first();
 
         $newNumber = ($lastUser && $lastUser->employee_id) ? ((int) substr($lastUser->employee_id, 2)) + 1 : 1;
-        $employeeId = $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $employeeId = $prefix.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         $user = User::create([
             'employee_id' => $employeeId,
@@ -104,135 +96,137 @@ class UserController extends Controller
             'username' => $request->username,
             'email' => $request->email,
             'phone' => $request->phone,
-            'status' => 'active', 
+            'status' => 'active',
             'password' => Hash::make($request->password),
             'avatar' => $request->avatar ?? null,
-            'linked_profile_id' => $request->linked_profile_id ?? null
+            'linked_profile_id' => $request->linked_profile_id ?? null,
         ]);
 
-        // Lưu vai trò vào bảng role_user
         $user->roles()->attach($request->role_id);
 
         AuditLog::create([
             'admin_id' => $request->user()->id,
             'admin_name' => $request->user()->name,
-            'action' => 'Tạo mới',
-            'details' => "Đã tạo tài khoản @{$user->username} (Mã: {$user->employee_id})"
+            'action' => 'Create',
+            'details' => "Created account @{$user->username} ({$user->employee_id})",
         ]);
 
-        return response()->json(['message' => 'Tạo tài khoản thành công', 'user' => $user], 201);
+        return response()->json(['message' => 'User created successfully', 'user' => $user], 201);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, User $user)
     {
-        $user = User::findOrFail($id);
-        
+        Gate::authorize('update', $user);
+
         $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users,email,'.$id,
-            'phone' => 'nullable|string|unique:users,phone,'.$id,
-            'role_id' => 'required|exists:roles,id',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
+            'phone' => 'nullable|string|max:20|unique:users,phone,'.$user->id,
+            'role_id' => 'required|integer|exists:roles,id',
+            'linked_profile_id' => 'nullable|integer',
         ]);
 
         $user->update($request->only(['name', 'email', 'phone', 'linked_profile_id']));
-        
-        // Cập nhật lại vai trò
         $user->roles()->sync([$request->role_id]);
-        
+
         AuditLog::create([
             'admin_id' => $request->user()->id,
             'admin_name' => $request->user()->name,
-            'action' => 'Chỉnh sửa',
-            'details' => "Đã cập nhật thông tin tài khoản @{$user->username}"
+            'action' => 'Update',
+            'details' => "Updated account @{$user->username}",
         ]);
 
-        return response()->json(['message' => 'Cập nhật tài khoản thành công', 'user' => $user]);
+        return response()->json(['message' => 'User updated successfully', 'user' => $user]);
     }
 
-    public function toggleStatus(Request $request, $id)
+    public function toggleStatus(Request $request, User $user)
     {
-        $userToToggle = User::findOrFail($id);
+        Gate::authorize('toggleStatus', $user);
+
         $currentUser = $request->user();
 
-        if ($currentUser->id === $userToToggle->id) {
-            return response()->json(['message' => 'Không thể khóa tài khoản đang đăng nhập'], 403);
+        if ($currentUser->id === $user->id) {
+            return response()->json(['message' => 'You cannot lock your own active session account'], 403);
         }
 
-        // Check xem có phải Admin không qua bảng roles
-        if ($userToToggle->roles()->where('slug', 'admin')->exists() && $userToToggle->status === 'active') {
-            $activeAdminsCount = User::whereHas('roles', function($q) {
+        if ($user->roles()->where('slug', 'admin')->exists() && $user->status === 'active') {
+            $activeAdminsCount = User::whereHas('roles', function ($q) {
                 $q->where('slug', 'admin');
             })->where('status', 'active')->count();
 
             if ($activeAdminsCount <= 1) {
-                return response()->json(['message' => 'Phải tồn tại ít nhất một tài khoản Admin đang hoạt động'], 403);
+                return response()->json(['message' => 'At least one active admin account is required'], 403);
             }
         }
 
-        $userToToggle->status = $userToToggle->status === 'active' ? 'locked' : 'active';
-        $userToToggle->save();
+        $user->status = $user->status === 'active' ? 'locked' : 'active';
+        $user->save();
 
         AuditLog::create([
             'admin_id' => $currentUser->id,
             'admin_name' => $currentUser->name,
-            'action' => $userToToggle->status === 'active' ? 'Mở khóa' : 'Khóa',
-            'details' => "Đã " . ($userToToggle->status === 'active' ? 'mở khóa' : 'khóa') . " tài khoản @{$userToToggle->username}"
+            'action' => $user->status === 'active' ? 'Unlock' : 'Lock',
+            'details' => ($user->status === 'active' ? 'Unlocked' : 'Locked')." account @{$user->username}",
         ]);
 
-        return response()->json(['message' => $userToToggle->status === 'active' ? 'Đã mở khóa tài khoản' : 'Đã khóa tài khoản']);
+        return response()->json([
+            'message' => $user->status === 'active' ? 'User unlocked successfully' : 'User locked successfully',
+        ]);
     }
 
-    public function sendResetOtp(Request $request, $id)
+    public function sendResetOtp(Request $request, User $user)
     {
-        $user = User::findOrFail($id);
-        
+        Gate::authorize('resetPassword', $user);
+
         if ($user->google_id) {
-            return response()->json(['message' => 'Tài khoản này sử dụng đăng nhập Google, không thể đổi mật khẩu!'], 400);
+            return response()->json(['message' => 'Google accounts cannot be reset with password OTP'], 400);
         }
 
         $otp = rand(100000, 999999);
-        Cache::put('reset_otp_' . $user->id, $otp, now()->addMinutes(5));
+        Cache::put('reset_otp_'.$user->id, $otp, now()->addMinutes(5));
 
         try {
-            $mailContent = "Xin chào {$user->name},\n\nMã OTP để đặt lại mật khẩu tài khoản Dental Pro của bạn là: {$otp}\n\nMã này có hiệu lực trong 5 phút.\n\nTrân trọng,\nPhòng khám Dental Pro";
-            
-            Mail::raw($mailContent, function($message) use ($user) {
-                $message->to($user->email)->subject('Mã OTP đặt lại mật khẩu - Dental Pro');
+            $mailContent = "Hello {$user->name},\n\nYour Dental Pro password reset OTP is: {$otp}\n\nThis code expires in 5 minutes.";
+
+            Mail::raw($mailContent, function ($message) use ($user) {
+                $message->to($user->email)->subject('Dental Pro password reset OTP');
             });
 
-            return response()->json(['message' => 'Đã gửi mã OTP về email thành công!']);
+            return response()->json(['message' => 'Reset OTP sent successfully']);
         } catch (\Exception $e) {
-            Log::error("Lỗi gửi mail: " . $e->getMessage());
-            return response()->json(['message' => "Lỗi cấu hình gửi Email. Vui lòng kiểm tra lại file .env"], 500);
+            Log::error('Failed to send reset OTP: '.$e->getMessage());
+
+            return response()->json(['message' => 'Email configuration error'], 500);
         }
     }
 
-    public function verifyAndResetPassword(Request $request, $id)
+    public function verifyAndResetPassword(Request $request, User $user)
     {
+        Gate::authorize('resetPassword', $user);
+
         $request->validate([
-            'otp' => 'required',
-            'new_password' => 'required|min:8'
+            'otp' => 'required|string|digits:6',
+            'new_password' => 'required|string|min:8',
         ]);
 
-        $user = User::findOrFail($id);
-        $cachedOtp = Cache::get('reset_otp_' . $user->id);
+        $cachedOtp = Cache::get('reset_otp_'.$user->id);
 
-        if (!$cachedOtp || $cachedOtp != $request->otp) {
-            return response()->json(['message' => 'Mã OTP không hợp lệ hoặc đã hết hạn!'], 400);
+        if (! $cachedOtp || $cachedOtp != $request->otp) {
+            return response()->json(['message' => 'Invalid or expired OTP'], 400);
         }
 
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        Cache::forget('reset_otp_' . $user->id);
+        Cache::forget('reset_otp_'.$user->id);
 
         AuditLog::create([
             'admin_id' => $request->user()->id,
             'admin_name' => $request->user()->name,
-            'action' => 'Đặt lại mật khẩu',
-            'details' => "Đã xác thực OTP và đổi mật khẩu mới cho @{$user->username}"
+            'action' => 'Reset password',
+            'details' => "Reset password for @{$user->username}",
         ]);
 
-        return response()->json(['message' => 'Đổi mật khẩu mới thành công!']);
+        return response()->json(['message' => 'Password reset successfully']);
     }
 }
