@@ -31,8 +31,6 @@ class User extends Authenticatable
         'linked_profile_id',
         'google_id',
 
-        
-
     ];
 
     /**
@@ -58,11 +56,17 @@ class User extends Authenticatable
         ];
     }
 
-    public function roles() {
+    public function roles()
+    {
         return $this->belongsToMany(Role::class);
     }
 
-    public function hasRole($roleSlug) {
-        return $this->roles->contains('slug', $roleSlug);
+    public function hasRole(string $roleSlug): bool
+    {
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->contains('slug', $roleSlug);
+        }
+
+        return $this->roles()->where('slug', $roleSlug)->exists();
     }
 }
