@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -54,25 +55,28 @@ class UserService
     public function createUser(array $data, User $admin): array
     {
         $role = Role::findOrFail($data['role_id']);
-        $employeeId = $this->nextEmployeeId($role);
 
-        $user = User::create([
-            'employee_id' => $employeeId,
-            'name' => $data['name'],
-            'username' => $data['username'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
-            'status' => 'active',
-            'password' => Hash::make($data['password']),
-            'avatar' => $data['avatar'] ?? null,
-            'linked_profile_id' => $data['linked_profile_id'] ?? null,
-        ]);
+        return DB::transaction(function () use ($data, $admin, $role) {
+            $employeeId = $this->nextEmployeeId($role);
 
-        $user->roles()->attach($data['role_id']);
+            $user = User::create([
+                'employee_id' => $employeeId,
+                'name' => $data['name'],
+                'username' => $data['username'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
+                'status' => 'active',
+                'password' => Hash::make($data['password']),
+                'avatar' => $data['avatar'] ?? null,
+                'linked_profile_id' => $data['linked_profile_id'] ?? null,
+            ]);
 
-        $this->audit($admin, 'Create', "Created account @{$user->username} ({$user->employee_id})");
+            $user->roles()->attach($data['role_id']);
 
-        return $user->load('roles')->toArray();
+            $this->audit($admin, 'Create', "Created account @{$user->username} ({$user->employee_id})");
+
+            return $user->load('roles')->toArray();
+        });
     }
 
     public function updateUser(User $user, array $data, User $admin): array
@@ -159,14 +163,20 @@ class UserService
     {
         $prefixes = ['admin' => 'AD', 'bac_si' => 'BS', 'le_tan' => 'LT', 'ke_toan' => 'KT', 'benh_nhan' => 'BN'];
         $prefix = $prefixes[$role->slug] ?? 'NV';
+        $lastEmployeeId = User::where('employee_id', 'like', $prefix.'%')
+            ->lockForUpdate()
+            ->orderByRaw('CAST(SUBSTRING(employee_id, 3) AS UNSIGNED) DESC')
+            ->value('employee_id');
 
-        $lastUser = User::whereHas('roles', function ($q) use ($role) {
-            $q->where('roles.id', $role->id);
-        })->orderBy('id', 'desc')->first();
+        $nextNumber = $lastEmployeeId ? ((int) substr($lastEmployeeId, 2)) + 1 : 1;
 
-        $newNumber = ($lastUser && $lastUser->employee_id) ? ((int) substr($lastUser->employee_id, 2)) + 1 : 1;
+        do {
+            $employeeId = $prefix.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+            $exists = User::where('employee_id', $employeeId)->exists();
+            $nextNumber++;
+        } while ($exists);
 
-        return $prefix.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return $employeeId;
     }
 
     private function audit(User $admin, string $action, string $details): void
