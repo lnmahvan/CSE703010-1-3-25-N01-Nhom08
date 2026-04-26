@@ -46,6 +46,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users/{user}/verify-reset', [UserController::class, 'verifyAndResetPassword'])->whereNumber('user');
         Route::get('/users/history', [UserController::class, 'getHistory']);
 
+        // Staff Routes
+        Route::get('/staff', [\App\Http\Controllers\Api\StaffController::class, 'index']);
+        Route::post('/staff', [\App\Http\Controllers\Api\StaffController::class, 'store']);
+        Route::get('/staff/{staff}', [\App\Http\Controllers\Api\StaffController::class, 'show'])->whereNumber('staff');
+        Route::put('/staff/{staff}', [\App\Http\Controllers\Api\StaffController::class, 'update'])->whereNumber('staff');
+        Route::put('/staff/{staff}/status', [\App\Http\Controllers\Api\StaffController::class, 'changeStatus'])->whereNumber('staff');
+        Route::get('/staff/{staff}/history', [\App\Http\Controllers\Api\StaffController::class, 'history'])->whereNumber('staff');
+
         Route::get('/roles', [UserController::class, 'getAllRoles']);
         Route::get('/admin/dashboard-stats', [DashboardController::class, 'getAdminStats']);
     });
