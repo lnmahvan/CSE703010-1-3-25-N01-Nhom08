@@ -19,7 +19,7 @@ import {
 
 const MainLayout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const { userRole, userName, logout } = useAuth();
+  const { userRole, userName, logout, hasPermission } = useAuth();
   const navigate = useNavigate();
 
   const roleNames = {
@@ -30,26 +30,38 @@ const MainLayout = () => {
     benh_nhan: 'Bệnh nhân'
   };
 
-  // Cấu hình danh sách Menu — mỗi item có route path
+  // Cấu hình danh sách Menu — mỗi item có route path và mã quyền (permission)
   const allMenuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Tổng quan', path: '/dashboard', roles: ['admin', 'bac_si', 'le_tan', 'ke_toan', 'benh_nhan'] },
 
-    { icon: <ShieldCheck size={20} />, label: 'Quản lý tài khoản', path: '/users', roles: ['admin'] },
-    { icon: <Users size={20} />, label: 'Quản lý nhân sự', path: '/staff', roles: ['admin'] },
+    { icon: <ShieldCheck size={20} />, label: 'Quản lý tài khoản', path: '/users', roles: ['admin'], permission: 'users.view' },
+    { icon: <ShieldCheck size={20} />, label: 'Phân quyền', path: '/permissions', roles: ['admin'], permission: 'users.view' },
+    { icon: <Users size={20} />, label: 'Quản lý nhân sự', path: '/staff', roles: ['admin'], permission: 'staff.view' },
     { icon: <Settings size={20} />, label: 'Cài đặt hệ thống', path: '/settings', roles: ['admin'] },
 
-    { icon: <Users size={20} />, label: 'Danh sách bệnh nhân', path: '/patients', roles: ['admin', 'bac_si', 'le_tan'] },
-    { icon: <Calendar size={20} />, label: 'Lịch hẹn phòng khám', path: '/appointments', roles: ['admin', 'bac_si', 'le_tan'] },
-    { icon: <ClipboardList size={20} />, label: 'Quản lý bệnh án', path: '/medical-records', roles: ['admin', 'bac_si'] },
+    { icon: <Users size={20} />, label: 'Danh sách bệnh nhân', path: '/patients', roles: ['admin', 'bac_si', 'le_tan'], permission: 'patients.view' },
+    { icon: <Calendar size={20} />, label: 'Lịch hẹn phòng khám', path: '/appointments', roles: ['admin', 'bac_si', 'le_tan'], permission: 'appointments.view' },
+    { icon: <ClipboardList size={20} />, label: 'Quản lý bệnh án', path: '/medical-records', roles: ['admin', 'bac_si'], permission: 'dental_records.view' },
 
-    { icon: <FileText size={20} />, label: 'Quản lý hóa đơn', path: '/invoices', roles: ['admin', 'ke_toan'] },
-    { icon: <TrendingUp size={20} />, label: 'Báo cáo doanh thu', path: '/revenue', roles: ['admin', 'ke_toan'] },
+    { icon: <FileText size={20} />, label: 'Quản lý hóa đơn', path: '/invoices', roles: ['admin', 'ke_toan'], permission: 'finance.view' },
+    { icon: <TrendingUp size={20} />, label: 'Báo cáo doanh thu', path: '/revenue', roles: ['admin', 'ke_toan'], permission: 'reports.view' },
 
     { icon: <Calendar size={20} />, label: 'Lịch hẹn của tôi', path: '/my-appointments', roles: ['benh_nhan'] },
     { icon: <ClipboardList size={20} />, label: 'Hồ sơ sức khỏe', path: '/health-records', roles: ['benh_nhan'] },
   ];
 
-  const authorizedMenus = allMenuItems.filter(item => item.roles.includes(userRole));
+  const authorizedMenus = allMenuItems.filter(item => {
+    // Admin có quyền truy cập tất cả
+    if (userRole === 'admin') return true;
+    
+    // Nếu menu yêu cầu quyền cụ thể (Dynamic RBAC)
+    if (item.permission) {
+      return hasPermission(item.permission);
+    }
+    
+    // Đối với các menu không có quyền cụ thể (ví dụ: Dashboard mặc định của bệnh nhân), dựa vào role
+    return item.roles.includes(userRole);
+  });
 
   const handleLogout = () => {
     logout();

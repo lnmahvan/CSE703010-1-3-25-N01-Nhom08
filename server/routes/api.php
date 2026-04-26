@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\PermissionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', function (Request $request) {
         return $request->user();
     });
+
+    Route::get('/user', function (Request $request) {
+        $user = $request->user();
+        return array_merge($user->toArray(), [
+            'role' => $user->roles->first()?->slug ?? '',
+            'permission_slugs' => $user->getPermissionSlugs()
+        ]);
+    });
+
+    Route::get('/permissions', [PermissionController::class, 'index']);
+    Route::get('/roles/{id}/permissions', [PermissionController::class, 'getRolePermissions']);
+    Route::put('/roles/{id}/permissions', [PermissionController::class, 'updateRolePermissions']);
+    Route::get('/users/{id}/permissions', [PermissionController::class, 'getUserPermissions']);
+    Route::put('/users/{id}/permissions', [PermissionController::class, 'updateUserPermissions']);
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index']);

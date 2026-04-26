@@ -69,4 +69,53 @@ class User extends Authenticatable
 
         return $this->roles()->where('slug', $roleSlug)->exists();
     }
+
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class);
+    }
+
+    public function hasPermissionTo(string $permissionSlug): bool
+    {
+        // Theo luật: Khi có quyền riêng, quyền tài khoản được ưu tiên hơn quyền vai trò (ghi đè hoàn toàn).
+        // Nếu user có thiết lập quyền riêng trong permission_user (dù là rỗng), ta sẽ chỉ check trong đó.
+        // Tuy nhiên, để xác định "user có thiết lập quyền riêng hay không", ta cần kiểm tra xem họ có record nào trong permission_user không.
+        // Nhưng nếu họ bị gỡ hết quyền riêng thì sao? 
+        // Trong cách thiết kế chuẩn: Nếu admin cấu hình "Quyền riêng", admin sẽ check trực tiếp vào tài khoản đó.
+        // Vì vậy quyền thực sự của User = tất cả quyền riêng (nếu có bất kỳ quyền riêng nào được cấp) 
+        // HOẶC dùng 1 cờ riêng. Nhưng ở đây ta thống nhất: Quyền cuối cùng = Quyền Riêng (nếu count > 0) else Quyền Role.
+        // Để linh hoạt và đúng đắn nhất với hệ thống ghi đè:
+        // Ta nên check quyền riêng trước.
+        
+        $hasCustomPermissions = $this->permissions()->count() > 0;
+
+        if ($hasCustomPermissions) {
+            return $this->permissions()->where('slug', $permissionSlug)->exists();
+        }
+
+        // Nếu không có quyền riêng, check quyền qua roles
+        foreach ($this->roles as $role) {
+            if ($role->permissions()->where('slug', $permissionSlug)->exists()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getPermissionSlugs(): array
+    {
+        $this->loadMissing('roles.permissions', 'permissions');
+
+        if ($this->permissions->count() > 0) {
+            return $this->permissions->pluck('slug')->toArray();
+        }
+
+        $permissionSlugs = [];
+        foreach ($this->roles as $role) {
+            $permissionSlugs = array_merge($permissionSlugs, $role->permissions->pluck('slug')->toArray());
+        }
+
+        return array_values(array_unique($permissionSlugs));
+    }
 }

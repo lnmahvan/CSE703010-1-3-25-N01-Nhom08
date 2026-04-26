@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
       email: userData.email,
       role: userData.role,
       name: userData.name,
+      permissions: userData.permission_slugs || [], // Thêm mảng quyền
     };
     setUser(userInfo);
     localStorage.setItem('user', JSON.stringify(userInfo));
@@ -29,11 +30,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
+  // Hàm kiểm tra quyền
+  const hasPermission = useCallback((permissionSlug) => {
+    if (!user || !user.permissions) return false;
+    return user.permissions.includes(permissionSlug);
+  }, [user]);
+
   const value = {
     user,
     isLoggedIn: !!user && !!getToken(),
     userRole: user?.role || '',
     userName: user?.name || '',
+    hasPermission,
     login,
     logout,
   };

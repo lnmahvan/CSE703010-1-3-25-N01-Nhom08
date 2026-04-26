@@ -48,8 +48,17 @@ class AuthService
                     return $this->response(['message' => 'Account is locked'], 403);
                 }
 
-                $token = $user->createToken('DentalProToken')->plainTextToken;
                 $user->load('roles');
+                // Fix for old accounts missing roles
+                if ($user->roles->isEmpty()) {
+                    $patientRole = Role::where('slug', 'benh_nhan')->first();
+                    if ($patientRole) {
+                        $user->roles()->attach($patientRole->id);
+                        $user->load('roles');
+                    }
+                }
+
+                $token = $user->createToken('DentalProToken')->plainTextToken;
 
                 return $this->response([
                     'requires_otp' => false,
@@ -86,6 +95,15 @@ class AuthService
 
         if (! $user) {
             return $this->response(['message' => 'Account not found'], 404);
+        }
+
+        // Fix for old accounts missing roles
+        if ($user->roles->isEmpty()) {
+            $patientRole = Role::where('slug', 'benh_nhan')->first();
+            if ($patientRole) {
+                $user->roles()->attach($patientRole->id);
+                $user->load('roles');
+            }
         }
 
         $token = $user->createToken('DentalProToken')->plainTextToken;
@@ -130,6 +148,7 @@ class AuthService
     {
         return array_merge($user->toArray(), [
             'role' => $user->roles->first()?->slug ?? '',
+            'permission_slugs' => $user->getPermissionSlugs(),
         ]);
     }
 

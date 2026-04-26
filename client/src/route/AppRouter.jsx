@@ -18,6 +18,7 @@ import PatientDashboard from '@/page/PatientDashboard';
 
 // Feature Pages
 import UserManagement from '@/page/UserManagement';
+import PermissionManagement from '@/page/PermissionManagement';
 import StaffManagement from '@/page/StaffManagement';
 import SystemSettings from '@/page/SystemSettings';
 import PatientList from '@/page/PatientList';
@@ -32,6 +33,17 @@ import HealthRecords from '@/page/HealthRecords';
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useAuth();
   if (!isLoggedIn) return <Navigate to="/login" replace />;
+  return children;
+};
+
+// Component bảo vệ dựa trên phân quyền (Dynamic RBAC)
+const PermissionRoute = ({ permission, children }) => {
+  const { hasPermission, userRole } = useAuth();
+  
+  if (userRole === 'admin') return children; // Admin qua hết
+  if (permission && !hasPermission(permission)) {
+    return <div className="p-10 text-center font-medium text-red-500">Bạn không có quyền truy cập trang này.</div>;
+  }
   return children;
 };
 
@@ -63,18 +75,19 @@ const AppRouter = () => {
         <Route path="dashboard" element={<DashboardByRole />} />
 
         {/* Admin Routes */}
-        <Route path="users" element={<UserManagement />} />
-        <Route path="staff" element={<StaffManagement />} />
-        <Route path="settings" element={<SystemSettings />} />
+        <Route path="users" element={<PermissionRoute permission="users.view"><UserManagement /></PermissionRoute>} />
+        <Route path="permissions" element={<PermissionRoute><PermissionManagement /></PermissionRoute>} />
+        <Route path="staff" element={<PermissionRoute permission="staff.view"><StaffManagement /></PermissionRoute>} />
+        <Route path="settings" element={<PermissionRoute><SystemSettings /></PermissionRoute>} />
 
-        {/* Shared Routes (Admin, Bác sĩ, Lễ tân) */}
-        <Route path="patients" element={<PatientList />} />
-        <Route path="appointments" element={<Appointments />} />
-        <Route path="medical-records" element={<MedicalRecords />} />
+        {/* Shared Routes */}
+        <Route path="patients" element={<PermissionRoute permission="patients.view"><PatientList /></PermissionRoute>} />
+        <Route path="appointments" element={<PermissionRoute permission="appointments.view"><Appointments /></PermissionRoute>} />
+        <Route path="medical-records" element={<PermissionRoute permission="dental_records.view"><MedicalRecords /></PermissionRoute>} />
 
         {/* Kế toán Routes */}
-        <Route path="invoices" element={<InvoiceManagement />} />
-        <Route path="revenue" element={<RevenueReport />} />
+        <Route path="invoices" element={<PermissionRoute permission="finance.view"><InvoiceManagement /></PermissionRoute>} />
+        <Route path="revenue" element={<PermissionRoute permission="reports.view"><RevenueReport /></PermissionRoute>} />
 
         {/* Bệnh nhân Routes */}
         <Route path="my-appointments" element={<MyAppointments />} />
