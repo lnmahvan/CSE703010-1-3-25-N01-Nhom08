@@ -60,7 +60,8 @@ export const useStaffManagement = () => {
       setStaffList(response.data.data);
       setCurrentPage(response.data.current_page);
       setTotalPages(response.data.last_page);
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -72,11 +73,15 @@ export const useStaffManagement = () => {
   }, [searchTerm, filterRoleId, filterStatus, toast]);
 
   useEffect(() => {
-    loadRoles();
+    (async () => {
+      await loadRoles();
+    })();
   }, [loadRoles]);
 
   useEffect(() => {
-    loadStaff(1);
+    (async () => {
+      await loadStaff(1);
+    })();
   }, [loadStaff]);
 
   const openCreateModal = () => {
@@ -157,7 +162,8 @@ export const useStaffManagement = () => {
       await staffApi.changeStatus(id, newStatus);
       toast({ title: "Thành công", description: `Đã chuyển trạng thái thành: ${newStatus}` });
       loadStaff(currentPage);
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       toast({ variant: "destructive", title: "Lỗi", description: "Chuyển trạng thái thất bại" });
     }
   };
@@ -167,7 +173,8 @@ export const useStaffManagement = () => {
       const response = await staffApi.getHistory(staffId);
       setHistoryLogs(response.data);
       setShowHistoryModal(true);
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       toast({ variant: "destructive", title: "Lỗi", description: "Lỗi tải lịch sử" });
     }
   };
