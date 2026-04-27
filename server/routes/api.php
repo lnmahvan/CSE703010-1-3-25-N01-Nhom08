@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\MyProfessionalProfileController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ProfessionalProfileController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\PermissionController;
 use Illuminate\Http\Request;
@@ -36,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/roles/{id}/permissions', [PermissionController::class, 'updateRolePermissions']);
     Route::get('/users/{id}/permissions', [PermissionController::class, 'getUserPermissions']);
     Route::put('/users/{id}/permissions', [PermissionController::class, 'updateUserPermissions']);
+    Route::get('/my-professional-profile', [MyProfessionalProfileController::class, 'show']);
+    Route::put('/my-professional-profile/{professionalProfile}', [MyProfessionalProfileController::class, 'update'])->whereNumber('professionalProfile');
+    Route::post('/my-professional-profile/{professionalProfile}/submit', [MyProfessionalProfileController::class, 'submit'])->whereNumber('professionalProfile');
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
@@ -53,6 +58,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/staff/{staff}', [\App\Http\Controllers\Api\StaffController::class, 'update'])->whereNumber('staff');
         Route::put('/staff/{staff}/status', [\App\Http\Controllers\Api\StaffController::class, 'changeStatus'])->whereNumber('staff');
         Route::get('/staff/{staff}/history', [\App\Http\Controllers\Api\StaffController::class, 'history'])->whereNumber('staff');
+        Route::get('/professional-profiles/options', [ProfessionalProfileController::class, 'options']);
+        Route::get('/professional-profiles', [ProfessionalProfileController::class, 'index']);
+        Route::post('/professional-profiles', [ProfessionalProfileController::class, 'store']);
+        Route::get('/professional-profiles/{professionalProfile}', [ProfessionalProfileController::class, 'show'])->whereNumber('professionalProfile');
+        Route::post('/professional-profiles/{professionalProfile}', [ProfessionalProfileController::class, 'update'])->whereNumber('professionalProfile');
+        Route::post('/professional-profiles/{professionalProfile}/submit', [ProfessionalProfileController::class, 'submit'])->whereNumber('professionalProfile');
+        Route::post('/professional-profiles/{professionalProfile}/approve', [ProfessionalProfileController::class, 'approve'])->whereNumber('professionalProfile');
+        Route::post('/professional-profiles/{professionalProfile}/reject', [ProfessionalProfileController::class, 'reject'])->whereNumber('professionalProfile');
+        Route::post('/professional-profiles/{professionalProfile}/invalidate', [ProfessionalProfileController::class, 'invalidate'])->whereNumber('professionalProfile');
+        Route::get('/professional-profiles/{professionalProfile}/history', [ProfessionalProfileController::class, 'history'])->whereNumber('professionalProfile');
 
         Route::get('/roles', [UserController::class, 'getAllRoles']);
         Route::get('/admin/dashboard-stats', [DashboardController::class, 'getAdminStats']);

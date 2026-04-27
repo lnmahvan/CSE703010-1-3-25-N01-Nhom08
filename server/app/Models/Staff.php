@@ -29,4 +29,9 @@ class Staff extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function professionalProfiles()
+    {
+        return $this->hasMany(ProfessionalProfile::class);
+    }
 }

@@ -75,6 +75,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Permission::class);
     }
 
+    public function staff()
+    {
+        return $this->hasOne(Staff::class);
+    }
+
     public function hasPermissionTo(string $permissionSlug): bool
     {
         // Theo luật: Khi có quyền riêng, quyền tài khoản được ưu tiên hơn quyền vai trò (ghi đè hoàn toàn).

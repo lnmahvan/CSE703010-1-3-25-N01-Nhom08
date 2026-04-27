@@ -2,51 +2,50 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Permission;
 use App\Models\Role;
+use Illuminate\Database\Seeder;
 
 class PermissionSeeder extends Seeder
 {
     public function run(): void
     {
         $modules = [
-            'users' => 'Quản lý người dùng',
-            'staff' => 'Nhân sự',
-            'categories' => 'Danh mục',
-            'patients' => 'Bệnh nhân',
-            'appointments' => 'Lịch hẹn',
-            'dental_records' => 'Khám nha khoa',
-            'finance' => 'Tài chính',
-            'reports' => 'Báo cáo'
+            'users' => 'Quan ly nguoi dung',
+            'staff' => 'Nhan su',
+            'professional_profiles' => 'Ho so chuyen mon',
+            'categories' => 'Danh muc',
+            'patients' => 'Benh nhan',
+            'appointments' => 'Lich hen',
+            'dental_records' => 'Kham nha khoa',
+            'finance' => 'Tai chinh',
+            'reports' => 'Bao cao',
         ];
 
         $actions = [
             'view' => 'Xem',
-            'create' => 'Thêm',
-            'edit' => 'Sửa',
-            'delete' => 'Xóa',
-            'approve' => 'Duyệt/Xác nhận',
-            'export' => 'In/Xuất file'
+            'create' => 'Them',
+            'edit' => 'Sua',
+            'delete' => 'Xoa',
+            'approve' => 'Duyet/Xac nhan',
+            'export' => 'In/Xuat file',
         ];
 
         $permissionIds = [];
 
-        // Tạo tất cả các quyền
         foreach ($modules as $moduleSlug => $moduleName) {
             foreach ($actions as $actionSlug => $actionName) {
                 $permission = Permission::firstOrCreate(
                     ['slug' => "{$moduleSlug}.{$actionSlug}"],
                     [
                         'name' => "{$actionName} {$moduleName}",
-                        'module' => $moduleSlug
+                        'module' => $moduleSlug,
                     ]
                 );
                 $permissionIds[] = $permission->id;
             }
         }
 
-        // Cấp FULL quyền cho vai trò admin
         $adminRole = Role::where('slug', 'admin')->first();
         if ($adminRole) {
             $adminRole->permissions()->sync($permissionIds);
