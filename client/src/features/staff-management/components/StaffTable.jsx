@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Eye, Pencil, RefreshCw, Lock, Unlock, History } from 'lucide-react';
+import { Search, Eye, Pencil, RefreshCw, Lock, Unlock, History, X } from 'lucide-react';
 
 const STATUS_BADGE = {
   working: 'bg-green-100 text-green-700 border-green-200',
@@ -30,46 +30,72 @@ const initialOf = (name = '') =>
     .join('')
     .toUpperCase();
 
+/**
+ * Compute compact pagination range with leading/trailing windows around current page.
+ * Returns array of numbers and '…' separators.
+ */
+const buildPageRange = (current, last) => {
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
+  const range = new Set([1, last, current - 1, current, current + 1]);
+  const sorted = [...range].filter((n) => n >= 1 && n <= last).sort((a, b) => a - b);
+  const out = [];
+  for (let i = 0; i < sorted.length; i += 1) {
+    if (i > 0 && sorted[i] - sorted[i - 1] > 1) out.push('…');
+    out.push(sorted[i]);
+  }
+  return out;
+};
+
 const StaffTable = ({
   staffList,
   availableRoles,
   loading,
   currentPage,
   totalPages,
+  totalCount,
+  perPage = 10,
+  pageSizeOptions = [10, 25, 50, 100],
   searchTerm,
   filterRoleId,
   filterStatus,
+  joinDateFrom,
   selectedStaffId,
   onSearchChange,
   onRoleFilterChange,
   onStatusFilterChange,
+  onJoinDateFromChange,
+  onPerPageChange,
   onSelectStaff,
   onOpenHistory,
   onEdit,
   onToggleStatus,
   onPageChange,
-  totalCount,
+  onResetFilters,
 }) => {
   const total = totalCount ?? staffList?.length ?? 0;
-  const pageStart = (currentPage - 1) * 10 + 1;
-  const pageEnd = Math.min(currentPage * 10, pageStart + (staffList?.length ?? 0) - 1);
-  const safePageEnd = Number.isFinite(pageEnd) ? Math.max(pageEnd, pageStart - 1) : pageStart;
+  const pageStart = total === 0 ? 0 : (currentPage - 1) * perPage + 1;
+  const pageEnd = total === 0 ? 0 : Math.min(currentPage * perPage, pageStart + (staffList?.length ?? 0) - 1);
 
   const goPage = (p) => {
+    if (typeof p !== 'number') return;
     if (p < 1 || p > totalPages || p === currentPage) return;
     onPageChange(p);
   };
 
-  const pageButtons = [];
-  for (let p = 1; p <= Math.max(totalPages, 1); p += 1) pageButtons.push(p);
-
+  const pageRange = buildPageRange(currentPage, Math.max(totalPages, 1));
   const getRoleLabel = (slug) =>
     availableRoles?.find((r) => r.slug === slug)?.name || slug || '—';
 
+  const hasActiveFilter =
+    !!searchTerm ||
+    filterRoleId !== 'all' ||
+    filterStatus !== 'all' ||
+    !!joinDateFrom;
+
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
-      <div className="p-4 border-b border-slate-200 flex flex-wrap gap-4">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="p-4 border-b border-slate-200 flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
@@ -83,7 +109,7 @@ const StaffTable = ({
         <select
           value={filterRoleId}
           onChange={(e) => onRoleFilterChange(e.target.value)}
-          className="w-44 border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-40 border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="all">Vai trò: Tất cả</option>
           {availableRoles?.map((r) => (
@@ -96,13 +122,21 @@ const StaffTable = ({
         <select
           value={filterStatus}
           onChange={(e) => onStatusFilterChange(e.target.value)}
-          className="w-48 border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-44 border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="all">Trạng thái: Tất cả</option>
           <option value="working">Đang làm việc</option>
           <option value="suspended">Tạm nghỉ</option>
           <option value="resigned">Nghỉ việc</option>
         </select>
+
+        <input
+          type="date"
+          value={joinDateFrom || ''}
+          onChange={(e) => onJoinDateFromChange?.(e.target.value)}
+          title="Vào làm từ ngày"
+          className="w-44 border border-slate-300 rounded-md px-3 py-2 text-sm bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
 
         <button
           type="button"
@@ -111,10 +145,21 @@ const StaffTable = ({
         >
           <RefreshCw className="h-4 w-4" /> Làm mới
         </button>
+
+        {hasActiveFilter && onResetFilters && (
+          <button
+            type="button"
+            onClick={onResetFilters}
+            className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 flex items-center gap-1"
+          >
+            <X className="h-3.5 w-3.5" /> Xoá lọc
+          </button>
+        )}
       </div>
 
       <div className="px-4 py-3 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center text-sm text-slate-500">
         <span>Tổng {total} nhân sự</span>
+        {hasActiveFilter && <span className="text-xs italic">Đang áp dụng bộ lọc</span>}
       </div>
 
       <div className="overflow-x-auto">
@@ -157,7 +202,7 @@ const StaffTable = ({
                     }`}
                   >
                     <td className="py-3 px-4 text-slate-700">
-                      {(currentPage - 1) * 10 + index + 1}
+                      {(currentPage - 1) * perPage + index + 1}
                     </td>
                     <td className="py-3 px-4 text-slate-500">{staff.employee_code}</td>
                     <td className="py-3 px-4 font-medium text-slate-900">
@@ -232,7 +277,7 @@ const StaffTable = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onOpenHistory(staff.id);
+                            onOpenHistory(staff);
                           }}
                           title="Lịch sử"
                           className="p-1.5 border border-slate-200 rounded hover:bg-slate-50 text-slate-500 hover:text-slate-700"
@@ -249,11 +294,11 @@ const StaffTable = ({
         </table>
       </div>
 
-      <div className="px-4 py-3 border-t border-slate-200 flex justify-between items-center bg-slate-50 rounded-b-lg text-sm">
+      <div className="px-4 py-3 border-t border-slate-200 flex flex-wrap gap-3 justify-between items-center bg-slate-50 rounded-b-lg text-sm">
         <span className="text-slate-500">
           {total === 0
             ? 'Không có dữ liệu'
-            : `Hiển thị ${pageStart} - ${safePageEnd} trong tổng số ${total}`}
+            : `Hiển thị ${pageStart} - ${pageEnd} trong tổng số ${total}`}
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -264,20 +309,29 @@ const StaffTable = ({
           >
             &lt;
           </button>
-          {pageButtons.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => goPage(p)}
-              className={`w-8 h-8 flex items-center justify-center border rounded font-medium ${
-                p === currentPage
-                  ? 'border-blue-500 bg-blue-50 text-blue-600'
-                  : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+          {pageRange.map((p, i) =>
+            p === '…' ? (
+              <span
+                key={`gap-${i}`}
+                className="w-8 h-8 flex items-center justify-center text-slate-400"
+              >
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                type="button"
+                onClick={() => goPage(p)}
+                className={`w-8 h-8 flex items-center justify-center border rounded font-medium ${
+                  p === currentPage
+                    ? 'border-blue-500 bg-blue-50 text-blue-600'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                }`}
+              >
+                {p}
+              </button>
+            )
+          )}
           <button
             type="button"
             onClick={() => goPage(currentPage + 1)}
@@ -286,6 +340,19 @@ const StaffTable = ({
           >
             &gt;
           </button>
+          {onPerPageChange && (
+            <select
+              value={perPage}
+              onChange={(e) => onPerPageChange(Number(e.target.value))}
+              className="ml-2 border border-slate-200 rounded py-1.5 px-2 bg-white text-slate-700 focus:outline-none"
+            >
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size} / trang
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
     </div>

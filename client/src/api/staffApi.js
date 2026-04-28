@@ -24,4 +24,8 @@ export const staffApi = {
   getHistory: (id) => {
     return axiosClient.get(`/staff/${id}/history`);
   },
+
+  resetPassword: (id) => {
+    return axiosClient.post(`/staff/${id}/reset-password`);
+  },
 };

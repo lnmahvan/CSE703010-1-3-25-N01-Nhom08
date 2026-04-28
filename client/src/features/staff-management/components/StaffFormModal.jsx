@@ -1,11 +1,23 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, X, User, Phone, Briefcase, FileBadge } from 'lucide-react';
+import { Save, X, User, Phone, Briefcase } from 'lucide-react';
 
 const StaffFormModal = ({
   open,
@@ -14,7 +26,7 @@ const StaffFormModal = ({
   availableRoles,
   onClose,
   onChange,
-  onSubmit
+  onSubmit,
 }) => {
   if (!open) return null;
 
@@ -32,110 +44,204 @@ const StaffFormModal = ({
           </DialogHeader>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 max-h-[70vh] overflow-y-auto">
           <Tabs defaultValue="personal" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-6 bg-slate-100/50 p-1 rounded-xl">
-              <TabsTrigger value="personal" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-teal-700 transition-all flex items-center gap-2">
+              <TabsTrigger
+                value="personal"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-teal-700 transition-all flex items-center gap-2"
+              >
                 <User className="w-4 h-4" /> Cá nhân
               </TabsTrigger>
-              <TabsTrigger value="contact" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-teal-700 transition-all flex items-center gap-2">
+              <TabsTrigger
+                value="contact"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-teal-700 transition-all flex items-center gap-2"
+              >
                 <Phone className="w-4 h-4" /> Liên hệ
               </TabsTrigger>
-              <TabsTrigger value="work" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-teal-700 transition-all flex items-center gap-2">
+              <TabsTrigger
+                value="work"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-teal-700 transition-all flex items-center gap-2"
+              >
                 <Briefcase className="w-4 h-4" /> Công việc
               </TabsTrigger>
             </TabsList>
 
-            <div className="min-h-[250px]">
-              <TabsContent value="personal" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="grid grid-cols-2 gap-4">
+            <div className="min-h-[260px]">
+              <TabsContent
+                value="personal"
+                className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-slate-700 font-medium">Mã nhân viên</Label>
-                    <Input 
-                      placeholder={isEditing ? formData.employee_code : "Hệ thống tự động sinh"} 
-                      value={formData.employee_code} 
+                    <Input
+                      placeholder={isEditing ? formData.employee_code : 'Hệ thống tự động sinh'}
+                      value={formData.employee_code}
                       disabled
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-500"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-700 font-medium">Họ và tên <span className="text-red-500">*</span></Label>
-                    <Input 
-                      placeholder="Nguyễn Văn A" 
-                      value={formData.full_name} 
-                      onChange={(e) => onChange('full_name', e.target.value)} 
+                    <Label className="text-slate-700 font-medium">
+                      Họ và tên <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      placeholder="Nguyễn Văn A"
+                      value={formData.full_name}
+                      onChange={(e) => onChange('full_name', e.target.value)}
+                      className="rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 font-medium">Ngày sinh</Label>
+                    <Input
+                      type="date"
+                      value={formData.birthday || ''}
+                      onChange={(e) => onChange('birthday', e.target.value)}
+                      className="rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 font-medium">Giới tính</Label>
+                    <Select
+                      value={formData.gender || ''}
+                      onValueChange={(val) => onChange('gender', val)}
+                    >
+                      <SelectTrigger className="rounded-xl border-slate-200 hover:border-teal-500 transition-colors">
+                        <SelectValue placeholder="Chọn giới tính" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white z-50 shadow-xl border-slate-100 rounded-xl overflow-hidden">
+                        <SelectItem value="male">Nam</SelectItem>
+                        <SelectItem value="female">Nữ</SelectItem>
+                        <SelectItem value="other">Khác</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 font-medium">CCCD/CMND</Label>
+                    <Input
+                      placeholder="001090123456"
+                      value={formData.id_card || ''}
+                      onChange={(e) => onChange('id_card', e.target.value)}
+                      className="rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
+                    />
+                    <label className="flex items-center gap-2 text-xs text-slate-600 mt-1 select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!formData.id_card_verified}
+                        onChange={(e) => onChange('id_card_verified', e.target.checked)}
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                      />
+                      Đã xác thực CCCD
+                    </label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 font-medium">Quốc tịch</Label>
+                    <Input
+                      placeholder="Việt Nam"
+                      value={formData.nationality || ''}
+                      onChange={(e) => onChange('nationality', e.target.value)}
                       className="rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                     />
                   </div>
                 </div>
               </TabsContent>
 
-              <TabsContent value="contact" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="grid grid-cols-2 gap-4">
+              <TabsContent
+                value="contact"
+                className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-700 font-medium">Email <span className="text-red-500">*</span></Label>
-                    <Input 
-                      type="email" 
-                      placeholder="email@example.com" 
-                      value={formData.email} 
-                      onChange={(e) => onChange('email', e.target.value)} 
+                    <Label className="text-slate-700 font-medium">
+                      Email <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      type="email"
+                      placeholder="email@example.com"
+                      value={formData.email}
+                      onChange={(e) => onChange('email', e.target.value)}
                       className="rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-slate-700 font-medium">Số điện thoại</Label>
-                    <Input 
-                      placeholder="0987654321" 
-                      value={formData.phone} 
-                      onChange={(e) => onChange('phone', e.target.value)} 
+                    <Input
+                      placeholder="0987654321"
+                      value={formData.phone}
+                      onChange={(e) => onChange('phone', e.target.value)}
                       className="rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                     />
                   </div>
                 </div>
               </TabsContent>
 
-              <TabsContent value="work" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="grid grid-cols-2 gap-4">
+              <TabsContent
+                value="work"
+                className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-700 font-medium">Vai trò hệ thống <span className="text-red-500">*</span></Label>
-                    <Select value={formData.role_slug} onValueChange={(val) => onChange('role_slug', val)}>
+                    <Label className="text-slate-700 font-medium">
+                      Vai trò hệ thống <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.role_slug}
+                      onValueChange={(val) => onChange('role_slug', val)}
+                    >
                       <SelectTrigger className="rounded-xl border-slate-200 hover:border-teal-500 transition-colors">
                         <SelectValue placeholder="Chọn vai trò" />
                       </SelectTrigger>
                       <SelectContent className="bg-white z-50 shadow-xl border-slate-100 rounded-xl overflow-hidden">
-                        {availableRoles.map(r => (
-                          <SelectItem key={r.slug} value={r.slug} className="hover:bg-teal-50 focus:bg-teal-50 cursor-pointer">{r.name}</SelectItem>
+                        {availableRoles.map((r) => (
+                          <SelectItem
+                            key={r.slug}
+                            value={r.slug}
+                            className="hover:bg-teal-50 focus:bg-teal-50 cursor-pointer"
+                          >
+                            {r.name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-slate-700 font-medium">Ngày vào làm</Label>
-                    <Input 
+                    <Input
                       type="date"
-                      value={formData.join_date} 
-                      onChange={(e) => onChange('join_date', e.target.value)} 
+                      value={formData.join_date}
+                      onChange={(e) => onChange('join_date', e.target.value)}
                       className="rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2 pt-2">
                   <Label className="text-slate-700 font-medium">Trạng thái công việc</Label>
-                  <Select value={formData.status} onValueChange={(val) => onChange('status', val)}>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(val) => onChange('status', val)}
+                  >
                     <SelectTrigger className="rounded-xl border-slate-200 hover:border-teal-500 transition-colors">
                       <SelectValue placeholder="Chọn trạng thái" />
                     </SelectTrigger>
                     <SelectContent className="bg-white z-50 shadow-xl border-slate-100 rounded-xl overflow-hidden">
-                      <SelectItem value="working" className="hover:bg-emerald-50 focus:bg-emerald-50 cursor-pointer">Đang làm việc</SelectItem>
-                      <SelectItem value="suspended" className="hover:bg-amber-50 focus:bg-amber-50 cursor-pointer">Tạm nghỉ (Khóa tài khoản)</SelectItem>
-                      <SelectItem value="resigned" className="hover:bg-red-50 focus:bg-red-50 cursor-pointer">Nghỉ việc (Khóa tài khoản)</SelectItem>
+                      <SelectItem value="working">Đang làm việc</SelectItem>
+                      <SelectItem value="suspended">Tạm nghỉ (Khóa tài khoản)</SelectItem>
+                      <SelectItem value="resigned">Nghỉ việc (Khóa tài khoản)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 {!isEditing && (
                   <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-100">
-                    Hệ thống sẽ tự động tạo Tài khoản đăng nhập tương ứng với Email và gửi Mật khẩu nếu cần.
+                    Hệ thống sẽ tự động tạo Tài khoản đăng nhập tương ứng với Email và sinh mật khẩu ngẫu nhiên. Quản trị có thể đặt lại mật khẩu sau ở khung Chi tiết nhân sự.
                   </p>
                 )}
               </TabsContent>
@@ -148,10 +254,17 @@ const StaffFormModal = ({
             <span className="text-red-500">*</span> là thông tin bắt buộc
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} className="rounded-xl border-slate-200 hover:bg-slate-100">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="rounded-xl border-slate-200 hover:bg-slate-100"
+            >
               <X className="w-4 h-4 mr-2" /> Hủy
             </Button>
-            <Button onClick={onSubmit} className="rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
+            <Button
+              onClick={onSubmit}
+              className="rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
+            >
               <Save className="w-4 h-4 mr-2" /> Lưu hồ sơ
             </Button>
           </div>
