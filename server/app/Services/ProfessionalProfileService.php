@@ -543,7 +543,7 @@ class ProfessionalProfileService
 
     private function assertSubmittable(ProfessionalProfile $profile): void
     {
-        $profile->loadMissing('specialties', 'certificates');
+        $profile->loadMissing(['specialties', 'certificates']);
         $this->assertProfilePayload($profile->profile_role, $profile->specialties->toArray(), $profile->certificates->toArray(), $profile->id);
     }
 
@@ -585,7 +585,7 @@ class ProfessionalProfileService
 
     private function snapshot(ProfessionalProfile $profile): array
     {
-        $profile->loadMissing('specialties', 'certificates');
+        $profile->loadMissing(['specialties', 'certificates']);
 
         return [
             'id' => $profile->id,

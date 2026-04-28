@@ -33,7 +33,7 @@ class PermissionController extends Controller
     }
 
     // Lấy danh sách ID các quyền của một Vai trò
-    public function getRolePermissions(Request $request, $roleId)
+    public function getRolePermissions(Request $request, int $roleId)
     {
         if (!$request->user()->roles()->where('slug', 'admin')->exists()) {
             return response()->json(['message' => 'Không có quyền truy cập'], 403);
@@ -46,7 +46,7 @@ class PermissionController extends Controller
     }
 
     // Lấy danh sách ID các quyền riêng của một Tài khoản
-    public function getUserPermissions(Request $request, $userId)
+    public function getUserPermissions(Request $request, int $userId)
     {
         if (!$request->user()->roles()->where('slug', 'admin')->exists()) {
             return response()->json(['message' => 'Không có quyền truy cập'], 403);
@@ -59,7 +59,7 @@ class PermissionController extends Controller
     }
 
     // Cập nhật quyền cho Vai trò
-    public function updateRolePermissions(Request $request, $roleId)
+    public function updateRolePermissions(Request $request, int $roleId)
     {
         $admin = $request->user();
         if (!$admin->roles()->where('slug', 'admin')->exists()) {
@@ -90,7 +90,7 @@ class PermissionController extends Controller
     }
 
     // Cập nhật quyền riêng cho Tài khoản
-    public function updateUserPermissions(Request $request, $userId)
+    public function updateUserPermissions(Request $request, int $userId)
     {
         $admin = $request->user();
         if (!$admin->roles()->where('slug', 'admin')->exists()) {

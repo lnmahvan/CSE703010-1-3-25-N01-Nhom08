@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import permissionApi from '@/api/permissionApi';
 import * as userApi from '@/api/userApi';
-import { useAuth } from '@/store/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 const PermissionManagement = () => {
   const { toast } = useToast();

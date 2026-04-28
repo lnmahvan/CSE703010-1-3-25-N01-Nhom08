@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BriefcaseMedical } from 'lucide-react';
 import ProfessionalProfileTable from '@/features/professional-profiles/components/ProfessionalProfileTable';
 import ProfessionalProfileForm from '@/features/professional-profiles/components/ProfessionalProfileForm';
@@ -29,13 +29,15 @@ export default function ProfessionalProfileManagement() {
   const [openDetail, setOpenDetail] = useState(false);
   const [detailProfile, setDetailProfile] = useState(null);
 
-  const loadOptions = async () => {
+  const loadOptions = useCallback(async () => {
+    await Promise.resolve();
     const response = await professionalProfileApi.getOptions();
     setStaffOptions(response.data.staff || []);
     setServices(response.data.services || []);
-  };
+  }, []);
 
-  const loadProfiles = async (page = 1) => {
+  const loadProfiles = useCallback(async (page = 1) => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const response = await professionalProfileApi.getAll({
@@ -53,17 +55,21 @@ export default function ProfessionalProfileManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, filterRole, filterStatus, toast]);
 
   useEffect(() => {
-    loadOptions().catch(() => {
-      toast({ variant: 'destructive', title: 'Loi', description: 'Khong the tai danh muc ho so chuyen mon.' });
+    Promise.resolve().then(() => {
+      loadOptions().catch(() => {
+        toast({ variant: 'destructive', title: 'Loi', description: 'Khong the tai danh muc ho so chuyen mon.' });
+      });
     });
-  }, []);
+  }, [loadOptions, toast]);
 
   useEffect(() => {
-    loadProfiles(1);
-  }, [searchTerm, filterRole, filterStatus]);
+    Promise.resolve().then(() => {
+      loadProfiles(1);
+    });
+  }, [loadProfiles]);
 
   const filteredStaffOptions = useMemo(() => {
     if (!form.profile_role) return staffOptions;

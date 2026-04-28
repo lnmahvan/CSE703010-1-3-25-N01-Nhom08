@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { BriefcaseMedical, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProfessionalProfileForm from '@/features/professional-profiles/components/ProfessionalProfileForm';
@@ -19,7 +19,8 @@ export default function MyProfessionalProfile() {
   const [services, setServices] = useState([]);
   const [openForm, setOpenForm] = useState(false);
 
-  const loadMyProfile = async () => {
+  const loadMyProfile = useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const response = await professionalProfileApi.getMine();
@@ -31,11 +32,13 @@ export default function MyProfessionalProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
-    loadMyProfile();
-  }, []);
+    Promise.resolve().then(() => {
+      loadMyProfile();
+    });
+  }, [loadMyProfile]);
 
   const handleSave = async () => {
     if (!form?.id) {

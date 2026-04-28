@@ -1,7 +1,6 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { setToken, removeToken, getToken } from '@/service/authService';
-
-const AuthContext = createContext(null);
+import AuthContext from './AuthContextCore';
 
 export const AuthProvider = ({ children }) => {
   // Khôi phục trạng thái từ localStorage khi load trang
@@ -52,14 +51,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-// Custom hook để dùng AuthContext
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth phải được sử dụng bên trong AuthProvider');
-  }
-  return context;
-};
-
-export default AuthContext;

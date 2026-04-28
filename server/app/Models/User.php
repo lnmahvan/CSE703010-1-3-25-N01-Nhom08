@@ -110,7 +110,7 @@ class User extends Authenticatable
 
     public function getPermissionSlugs(): array
     {
-        $this->loadMissing('roles.permissions', 'permissions');
+        $this->loadMissing(['roles.permissions', 'permissions']);
 
         if ($this->permissions->count() > 0) {
             return $this->permissions->pluck('slug')->toArray();

@@ -238,7 +238,7 @@ class StaffController extends Controller
         return response()->json($logs);
     }
 
-    private function logAction($admin, $action, $details = null)
+    private function logAction(?User $admin, string $action, ?array $details = null)
     {
         AuditLog::create([
             'admin_id' => $admin->id ?? 1,
