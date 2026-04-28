@@ -14,6 +14,7 @@ export const useStaffManagement = () => {
   // Pagination & Filters
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRoleId, setFilterRoleId] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -60,6 +61,7 @@ export const useStaffManagement = () => {
       setStaffList(response.data.data);
       setCurrentPage(response.data.current_page);
       setTotalPages(response.data.last_page);
+      setTotalItems(response.data.total ?? response.data.data.length);
     } catch (error) {
       console.error(error);
       toast({
@@ -189,6 +191,7 @@ export const useStaffManagement = () => {
     loading,
     currentPage,
     totalPages,
+    totalItems,
     searchTerm,
     filterRoleId,
     filterStatus,
