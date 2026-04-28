@@ -73,6 +73,16 @@ class StaffController extends Controller
             'id_card' => 'nullable|string|max:32|unique:staff,id_card',
             'id_card_verified' => 'nullable|boolean',
             'nationality' => 'nullable|string|max:100',
+            'highest_degree' => 'nullable|string|max:255',
+            'major' => 'nullable|string|max:255',
+            'school' => 'nullable|string|max:255',
+            'graduation_year' => 'nullable|integer|min:1950|max:2100',
+            'practice_certificate' => 'nullable|string|max:255',
+            'base_salary' => 'nullable|numeric|min:0',
+            'salary_type' => 'nullable|in:hourly,monthly',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_account' => 'nullable|string|max:64',
+            'tax_code' => 'nullable|string|max:32',
         ]);
 
         try {
@@ -153,6 +163,16 @@ class StaffController extends Controller
             'id_card' => 'nullable|string|max:32|unique:staff,id_card,' . $id,
             'id_card_verified' => 'nullable|boolean',
             'nationality' => 'nullable|string|max:100',
+            'highest_degree' => 'nullable|string|max:255',
+            'major' => 'nullable|string|max:255',
+            'school' => 'nullable|string|max:255',
+            'graduation_year' => 'nullable|integer|min:1950|max:2100',
+            'practice_certificate' => 'nullable|string|max:255',
+            'base_salary' => 'nullable|numeric|min:0',
+            'salary_type' => 'nullable|in:hourly,monthly',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_account' => 'nullable|string|max:64',
+            'tax_code' => 'nullable|string|max:32',
         ]);
 
         try {

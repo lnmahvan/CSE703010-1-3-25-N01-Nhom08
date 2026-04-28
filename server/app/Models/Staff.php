@@ -22,6 +22,16 @@ class Staff extends Model
         'role_slug',
         'certificate_file',
         'is_certificate_valid',
+        'highest_degree',
+        'major',
+        'school',
+        'graduation_year',
+        'practice_certificate',
+        'base_salary',
+        'salary_type',
+        'bank_name',
+        'bank_account',
+        'tax_code',
         'user_id'
     ];
 
@@ -30,6 +40,8 @@ class Staff extends Model
         'birthday' => 'date',
         'is_certificate_valid' => 'boolean',
         'id_card_verified' => 'boolean',
+        'graduation_year' => 'integer',
+        'base_salary' => 'decimal:2',
     ];
 
     public function user()

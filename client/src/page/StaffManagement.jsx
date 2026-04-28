@@ -47,6 +47,22 @@ const GENDER_LABEL = {
   other: 'Khác',
 };
 
+const SALARY_TYPE_LABEL = {
+  hourly: 'Theo giờ',
+  monthly: 'Theo tháng',
+};
+
+const formatCurrency = (value) => {
+  if (value === null || value === undefined || value === '') return '—';
+  const num = typeof value === 'number' ? value : Number(value);
+  if (Number.isNaN(num)) return '—';
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(num);
+};
+
 const ACCOUNT_STATUS_BADGE = {
   active: { className: 'bg-green-100 text-green-700 border-green-200', label: 'Đang hoạt động' },
   locked: { className: 'bg-red-100 text-red-700 border-red-200', label: 'Đã khóa' },
@@ -418,9 +434,8 @@ export default function StaffManagement() {
               <div className="flex border-b border-slate-200 mb-4 overflow-x-auto">
                 {[
                   { id: 'general', label: 'Thông tin chung' },
-                  { id: 'contact', label: 'Liên hệ' },
-                  { id: 'work', label: 'Công việc' },
-                  { id: 'system', label: 'Hệ thống' },
+                  { id: 'qualification', label: 'Thông tin chuyên môn' },
+                  { id: 'compensation', label: 'Hợp đồng & Đãi ngộ' },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -467,6 +482,8 @@ export default function StaffManagement() {
                     label="Quốc tịch"
                     value={selectedStaff.nationality || 'Việt Nam'}
                   />
+                  <DetailRow label="Email" value={selectedStaff.email || '—'} />
+                  <DetailRow label="Số điện thoại" value={selectedStaff.phone || '—'} />
                   <div className="grid grid-cols-[120px_1fr] items-start gap-2">
                     <div className="text-slate-500 mt-2">Ảnh đại diện</div>
                     <div className="flex gap-3 items-center">
@@ -499,14 +516,7 @@ export default function StaffManagement() {
                 </div>
               )}
 
-              {detailTab === 'contact' && (
-                <div className="space-y-4 mb-6 text-sm">
-                  <DetailRow label="Email" value={selectedStaff.email || '—'} />
-                  <DetailRow label="Số điện thoại" value={selectedStaff.phone || '—'} />
-                </div>
-              )}
-
-              {detailTab === 'work' && (
+              {detailTab === 'qualification' && (
                 <div className="space-y-4 mb-6 text-sm">
                   <DetailRow label="Vai trò" value={roleLabel(selectedStaff.role_slug)} />
                   <DetailRow label="Ngày vào làm" value={formatDate(selectedStaff.join_date)} />
@@ -524,7 +534,21 @@ export default function StaffManagement() {
                     }
                   />
                   <DetailRow
-                    label="Chứng chỉ"
+                    label="Bằng cấp cao nhất"
+                    value={selectedStaff.highest_degree || '—'}
+                  />
+                  <DetailRow label="Chuyên ngành" value={selectedStaff.major || '—'} />
+                  <DetailRow label="Trường đào tạo" value={selectedStaff.school || '—'} />
+                  <DetailRow
+                    label="Năm tốt nghiệp"
+                    value={selectedStaff.graduation_year || '—'}
+                  />
+                  <DetailRow
+                    label="Chứng chỉ hành nghề"
+                    value={selectedStaff.practice_certificate || '—'}
+                  />
+                  <DetailRow
+                    label="Chứng chỉ hồ sơ"
                     value={
                       selectedStaff.is_certificate_valid ? (
                         <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-medium border border-green-200">
@@ -538,15 +562,27 @@ export default function StaffManagement() {
                 </div>
               )}
 
-              {detailTab === 'system' && (
-                <div className="space-y-3 mb-6 text-sm">
-                  <DetailRow label="ID nội bộ" value={selectedStaff.id} />
-                  <DetailRow label="Tạo lúc" value={formatDateTime(selectedStaff.created_at)} />
-                  <DetailRow label="Cập nhật" value={formatDateTime(selectedStaff.updated_at)} />
+              {detailTab === 'compensation' && (
+                <div className="space-y-4 mb-6 text-sm">
                   <DetailRow
-                    label="User ID"
-                    value={selectedStaff.user_id ?? '—'}
+                    label="Mức lương cơ bản"
+                    value={formatCurrency(selectedStaff.base_salary)}
+                    bold
                   />
+                  <DetailRow
+                    label="Hình thức trả lương"
+                    value={
+                      selectedStaff.salary_type
+                        ? SALARY_TYPE_LABEL[selectedStaff.salary_type] || selectedStaff.salary_type
+                        : '—'
+                    }
+                  />
+                  <DetailRow label="Ngân hàng" value={selectedStaff.bank_name || '—'} />
+                  <DetailRow
+                    label="Số tài khoản"
+                    value={selectedStaff.bank_account || '—'}
+                  />
+                  <DetailRow label="Mã số thuế" value={selectedStaff.tax_code || '—'} />
                 </div>
               )}
 
