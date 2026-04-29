@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/staff/{staff}', [\App\Http\Controllers\Api\StaffController::class, 'update'])->whereNumber('staff');
         Route::put('/staff/{staff}/status', [\App\Http\Controllers\Api\StaffController::class, 'changeStatus'])->whereNumber('staff');
         Route::get('/staff/{staff}/history', [\App\Http\Controllers\Api\StaffController::class, 'history'])->whereNumber('staff');
+        Route::post('/staff/{staff}/reset-password', [\App\Http\Controllers\Api\StaffController::class, 'resetPassword'])->whereNumber('staff');
         Route::get('/branches', [\App\Http\Controllers\Api\BranchController::class, 'index']);
         Route::get('/professional-profiles/options', [ProfessionalProfileController::class, 'options']);
         Route::get('/professional-profiles', [ProfessionalProfileController::class, 'index']);

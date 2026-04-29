@@ -88,6 +88,9 @@ class ProfessionalProfileService
             'staff' => Staff::query()
                 ->with('branch:id,code,name,city')
                 ->whereIn('role_slug', ['bac_si', 'ke_toan'])
+                ->whereDoesntHave('professionalProfiles', function ($q) {
+                    $q->whereColumn('professional_profiles.profile_role', 'staff.role_slug');
+                })
                 ->orderBy('full_name')
                 ->get(['id', 'employee_code', 'full_name', 'role_slug', 'email', 'status', 'avatar', 'branch_id']),
             'services' => Service::query()->orderBy('name')->get(['id', 'name', 'price']),

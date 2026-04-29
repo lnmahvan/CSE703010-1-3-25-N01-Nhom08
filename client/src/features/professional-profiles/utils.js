@@ -1,20 +1,20 @@
 export const PROFILE_ROLE_OPTIONS = [
-  { value: 'bac_si', label: 'Bac si' },
-  { value: 'ke_toan', label: 'Ke toan' },
+  { value: 'bac_si', label: 'Bác sĩ' },
+  { value: 'ke_toan', label: 'Kế toán' },
 ];
 
 export const PROFILE_STATUS_META = {
-  draft: { label: 'Chua hoan thien', className: 'bg-slate-100 text-slate-700 border-slate-200' },
-  pending: { label: 'Cho duyet', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  approved: { label: 'Da duyet', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  expired: { label: 'Het han', className: 'bg-rose-50 text-rose-700 border-rose-200' },
-  rejected: { label: 'Tu choi', className: 'bg-red-50 text-red-700 border-red-200' },
-  inactive: { label: 'Vo hieu hoa', className: 'bg-slate-200 text-slate-700 border-slate-300' },
+  draft: { label: 'Chưa hoàn thiện', className: 'bg-slate-100 text-slate-700 border-slate-200' },
+  pending: { label: 'Chờ duyệt', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+  approved: { label: 'Đã duyệt', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  expired: { label: 'Hết hạn', className: 'bg-rose-50 text-rose-700 border-rose-200' },
+  rejected: { label: 'Từ chối', className: 'bg-red-50 text-red-700 border-red-200' },
+  inactive: { label: 'Vô hiệu hóa', className: 'bg-slate-200 text-slate-700 border-slate-300' },
 };
 
 export const CERTIFICATE_TYPE_OPTIONS = {
-  bac_si: ['Chung chi hanh nghe', 'Chung chi chuyen khoa', 'Bang cap', 'Tai lieu khac'],
-  ke_toan: ['Chung chi ke toan', 'Bang cap', 'Tai lieu khac'],
+  bac_si: ['Chứng chỉ hành nghề', 'Chứng chỉ chuyên khoa', 'Bằng cấp', 'Tài liệu khác'],
+  ke_toan: ['Chứng chỉ kế toán', 'Bằng cấp', 'Tài liệu khác'],
 };
 
 export const createEmptySpecialty = () => ({

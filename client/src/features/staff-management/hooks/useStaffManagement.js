@@ -179,12 +179,21 @@ export const useStaffManagement = () => {
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
+    // BUG-8 FIX: Không cho toggle từ resigned về working
+    if (currentStatus === 'resigned') {
+      toast({
+        variant: 'destructive',
+        title: 'Không thể chuyển trạng thái',
+        description: 'Nhân sự đã nghỉ việc. Vui lòng liên hệ quản trị viên để tái tuyển dụng.',
+      });
+      return;
+    }
     const newStatus = currentStatus === 'working' ? 'suspended' : 'working';
     try {
       await staffApi.changeStatus(id, newStatus);
       toast({
         title: 'Thành công',
-        description: `Đã chuyển trạng thái thành: ${newStatus}`,
+        description: `Đã chuyển trạng thái thành: ${newStatus === 'working' ? 'Đang làm việc' : 'Tạm nghỉ'}`,
       });
       loadStaff(currentPage);
     } catch (error) {
@@ -192,7 +201,7 @@ export const useStaffManagement = () => {
       toast({
         variant: 'destructive',
         title: 'Lỗi',
-        description: 'Chuyển trạng thái thất bại',
+        description: error.response?.data?.message || 'Chuyển trạng thái thất bại',
       });
     }
   };

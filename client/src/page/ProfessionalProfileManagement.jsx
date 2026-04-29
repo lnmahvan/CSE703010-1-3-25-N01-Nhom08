@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Download, Plus, FileWarning, AlarmClock, ClipboardList } from 'lucide-react';
 import ProfessionalProfileTable from '@/features/professional-profiles/components/ProfessionalProfileTable';
 import ProfessionalProfileForm from '@/features/professional-profiles/components/ProfessionalProfileForm';
@@ -28,6 +29,7 @@ const formatDateTime = (value) => {
 
 export default function ProfessionalProfileManagement() {
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [profiles, setProfiles] = useState([]);
   const [staffOptions, setStaffOptions] = useState([]);
   const [services, setServices] = useState([]);
@@ -95,6 +97,31 @@ export default function ProfessionalProfileManagement() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // BUG-7 FIX: Đọc query param ?staff=ID để tự động tìm kiếm khi điều hướng từ module Nhân sự
+  useEffect(() => {
+    const staffParam = searchParams.get('staff');
+    if (staffParam) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFilterStaffId(staffParam);
+      // Tìm nhân sự theo ID để lấy tên hiển thị trong ô search
+      const matchedStaff = staffOptions.find((s) => String(s.id) === staffParam);
+      if (matchedStaff) {
+        setSearchTerm(matchedStaff.full_name);
+      }
+      // Xóa param khỏi URL để tránh re-apply khi filter thay đổi
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, staffOptions]);
+
+  // Làm mới danh sách nhân sự mỗi khi wizard tạo hồ sơ được mở
+  useEffect(() => {
+    if (!openWizard) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadOptions().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openWizard]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -187,7 +214,9 @@ export default function ProfessionalProfileManagement() {
       await professionalProfileApi.create(formData);
       toast({ title: 'Thành công', description: 'Đã tạo hồ sơ chuyên môn mới.' });
       setOpenWizard(false);
+      // Tải lại cả danh sách hồ sơ lẫn danh sách nhân sự chưa có hồ sơ
       loadProfiles(1);
+      loadOptions().catch(() => {});
     } catch (error) {
       toast({
         variant: 'destructive',
