@@ -122,6 +122,10 @@ class ProfessionalProfileController extends Controller
             'profile_role' => 'required|in:bac_si,ke_toan',
             'status' => 'nullable|in:draft,pending',
             'notes' => 'nullable|string',
+            'degree' => 'nullable|string|max:120',
+            'years_experience' => 'nullable|integer|min:0|max:80',
+            'branch_id' => 'nullable|integer|exists:branches,id',
+            'service_scope_payload' => 'nullable|string',
             'specialties_payload' => 'nullable|string',
             'certificates_payload' => 'nullable|string',
             'certificate_files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
@@ -130,6 +134,7 @@ class ProfessionalProfileController extends Controller
         return array_merge($validated, [
             'specialties' => $this->decodeJsonField($request->input('specialties_payload', '[]'), 'specialties_payload'),
             'certificates' => $this->decodeJsonField($request->input('certificates_payload', '[]'), 'certificates_payload'),
+            'service_scope' => $this->decodeJsonField($request->input('service_scope_payload', '[]'), 'service_scope_payload'),
         ]);
     }
 

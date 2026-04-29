@@ -19,7 +19,7 @@ class StaffController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Staff::with('user');
+        $query = Staff::with(['user','branch']);
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -39,18 +39,7 @@ class StaffController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->has('join_date_from') && !empty($request->join_date_from)) {
-            $query->whereDate('join_date', '>=', $request->join_date_from);
-        }
-
-        if ($request->has('join_date_to') && !empty($request->join_date_to)) {
-            $query->whereDate('join_date', '<=', $request->join_date_to);
-        }
-
-        $perPage = (int) $request->input('per_page', 10);
-        if (!in_array($perPage, [10, 25, 50, 100])) {
-            $perPage = 10;
-        }
+        $perPage = $request->input('per_page', 10);
         $staff = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return response()->json($staff);
@@ -66,23 +55,9 @@ class StaffController extends Controller
             'email' => 'required|email|unique:staff,email|unique:users,email',
             'phone' => 'nullable|string|digits:10|unique:staff,phone',
             'role_slug' => 'required|string|exists:roles,slug',
+            'branch_id' => 'nullable|integer|exists:branches,id',
             'join_date' => 'nullable|date',
             'status' => 'nullable|in:working,suspended,resigned',
-            'birthday' => 'nullable|date|before:today',
-            'gender' => 'nullable|in:male,female,other',
-            'id_card' => 'nullable|string|max:32|unique:staff,id_card',
-            'id_card_verified' => 'nullable|boolean',
-            'nationality' => 'nullable|string|max:100',
-            'highest_degree' => 'nullable|string|max:255',
-            'major' => 'nullable|string|max:255',
-            'school' => 'nullable|string|max:255',
-            'graduation_year' => 'nullable|integer|min:1950|max:2100',
-            'practice_certificate' => 'nullable|string|max:255',
-            'base_salary' => 'nullable|numeric|min:0',
-            'salary_type' => 'nullable|in:hourly,monthly',
-            'bank_name' => 'nullable|string|max:255',
-            'bank_account' => 'nullable|string|max:64',
-            'tax_code' => 'nullable|string|max:32',
         ]);
 
         try {
@@ -127,7 +102,7 @@ class StaffController extends Controller
 
             return response()->json([
                 'message' => 'Thêm nhân sự thành công',
-                'staff' => $staff->load('user')
+                'staff' => $staff->load(['user','branch'])
             ], 201);
 
         } catch (\Exception $e) {
@@ -141,7 +116,7 @@ class StaffController extends Controller
      */
     public function show(string $id)
     {
-        $staff = Staff::with('user')->findOrFail($id);
+        $staff = Staff::with(['user','branch'])->findOrFail($id);
         return response()->json($staff);
     }
 
@@ -157,22 +132,8 @@ class StaffController extends Controller
             'email' => 'required|email|unique:staff,email,' . $id . '|unique:users,email,' . $staff->user_id,
             'phone' => 'nullable|string|digits:10|unique:staff,phone,' . $id,
             'role_slug' => 'required|string|exists:roles,slug',
+            'branch_id' => 'nullable|integer|exists:branches,id',
             'join_date' => 'nullable|date',
-            'birthday' => 'nullable|date|before:today',
-            'gender' => 'nullable|in:male,female,other',
-            'id_card' => 'nullable|string|max:32|unique:staff,id_card,' . $id,
-            'id_card_verified' => 'nullable|boolean',
-            'nationality' => 'nullable|string|max:100',
-            'highest_degree' => 'nullable|string|max:255',
-            'major' => 'nullable|string|max:255',
-            'school' => 'nullable|string|max:255',
-            'graduation_year' => 'nullable|integer|min:1950|max:2100',
-            'practice_certificate' => 'nullable|string|max:255',
-            'base_salary' => 'nullable|numeric|min:0',
-            'salary_type' => 'nullable|in:hourly,monthly',
-            'bank_name' => 'nullable|string|max:255',
-            'bank_account' => 'nullable|string|max:64',
-            'tax_code' => 'nullable|string|max:32',
         ]);
 
         try {
@@ -211,7 +172,7 @@ class StaffController extends Controller
 
             return response()->json([
                 'message' => 'Cập nhật nhân sự thành công',
-                'staff' => $staff->load('user')
+                'staff' => $staff->load(['user','branch'])
             ]);
 
         } catch (\Exception $e) {
@@ -258,7 +219,7 @@ class StaffController extends Controller
 
             return response()->json([
                 'message' => 'Cập nhật trạng thái thành công',
-                'staff' => $staff->fresh()->load('user')
+                'staff' => $staff->fresh()->load(['user','branch'])
             ]);
 
         } catch (\Exception $e) {
@@ -277,46 +238,6 @@ class StaffController extends Controller
                         ->orderBy('created_at', 'desc')
                         ->get();
         return response()->json($logs);
-    }
-
-    /**
-     * Đặt lại mật khẩu cho tài khoản liên kết của nhân sự.
-     * Trả về mật khẩu mới (sinh ngẫu nhiên) để admin chuyển cho nhân sự.
-     */
-    public function resetPassword(Request $request, string $id)
-    {
-        $staff = Staff::with('user')->findOrFail($id);
-
-        if (!$staff->user_id || !$staff->user) {
-            return response()->json([
-                'message' => 'Nhân sự này không có tài khoản liên kết.'
-            ], 422);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $newPassword = Str::random(10);
-            $staff->user->update([
-                'password' => Hash::make($newPassword),
-            ]);
-
-            $this->logAction(
-                $request->user(),
-                "Đặt lại mật khẩu cho nhân sự: {$staff->full_name} ({$staff->employee_code})"
-            );
-
-            DB::commit();
-
-            return response()->json([
-                'message' => 'Đặt lại mật khẩu thành công',
-                'temporary_password' => $newPassword,
-                'username' => $staff->user->username,
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
-        }
     }
 
     private function logAction($admin, $action, $details = null)

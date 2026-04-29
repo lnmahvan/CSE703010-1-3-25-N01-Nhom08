@@ -9,39 +9,21 @@ class Staff extends Model
     protected $fillable = [
         'employee_code',
         'full_name',
-        'birthday',
-        'gender',
-        'id_card',
-        'id_card_verified',
-        'nationality',
         'phone',
         'email',
         'avatar',
         'join_date',
         'status',
         'role_slug',
+        'branch_id',
         'certificate_file',
         'is_certificate_valid',
-        'highest_degree',
-        'major',
-        'school',
-        'graduation_year',
-        'practice_certificate',
-        'base_salary',
-        'salary_type',
-        'bank_name',
-        'bank_account',
-        'tax_code',
         'user_id'
     ];
 
     protected $casts = [
         'join_date' => 'date',
-        'birthday' => 'date',
         'is_certificate_valid' => 'boolean',
-        'id_card_verified' => 'boolean',
-        'graduation_year' => 'integer',
-        'base_salary' => 'decimal:2',
     ];
 
     public function user()
@@ -52,5 +34,10 @@ class Staff extends Model
     public function professionalProfiles()
     {
         return $this->hasMany(ProfessionalProfile::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 }

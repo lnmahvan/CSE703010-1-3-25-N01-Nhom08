@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
 use App\Models\ProfessionalProfile;
 use App\Models\ProfessionalProfileCertificate;
 use App\Models\ProfessionalProfileSpecialty;
@@ -27,7 +28,7 @@ class ProfessionalProfileService
     public function listProfiles(array $filters = [])
     {
         $query = ProfessionalProfile::query()
-            ->with(['staff.user', 'certificates', 'specialties'])
+            ->with(['staff.user', 'staff.branch', 'branch', 'certificates', 'specialties'])
             ->withCount('certificates');
 
         if (! empty($filters['search'])) {
@@ -59,6 +60,8 @@ class ProfessionalProfileService
     {
         return ProfessionalProfile::with([
             'staff.user',
+            'staff.branch',
+            'branch',
             'approver',
             'invalidator',
             'specialties',
@@ -83,10 +86,19 @@ class ProfessionalProfileService
     {
         return [
             'staff' => Staff::query()
+                ->with('branch:id,code,name,city')
                 ->whereIn('role_slug', ['bac_si', 'ke_toan'])
                 ->orderBy('full_name')
-                ->get(['id', 'employee_code', 'full_name', 'role_slug', 'email', 'status']),
+                ->get(['id', 'employee_code', 'full_name', 'role_slug', 'email', 'status', 'avatar', 'branch_id']),
             'services' => Service::query()->orderBy('name')->get(['id', 'name', 'price']),
+            'branches' => Branch::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name', 'city']),
+            'degrees' => [
+                ['value' => 'cu_nhan', 'label' => 'Cử nhân'],
+                ['value' => 'thac_si', 'label' => 'Thạc sĩ'],
+                ['value' => 'tien_si', 'label' => 'Tiến sĩ'],
+                ['value' => 'pgs_ts', 'label' => 'PGS.TS'],
+                ['value' => 'gs_ts', 'label' => 'GS.TS'],
+            ],
         ];
     }
 
@@ -106,6 +118,10 @@ class ProfessionalProfileService
                 'profile_role' => $payload['profile_role'],
                 'status' => $payload['status'] ?? ProfessionalProfile::STATUS_DRAFT,
                 'notes' => $payload['notes'] ?? null,
+                'degree' => $payload['degree'] ?? null,
+                'years_experience' => $payload['years_experience'] ?? null,
+                'branch_id' => $payload['branch_id'] ?? null,
+                'service_scope' => $this->normalizeServiceScope($payload['service_scope'] ?? null),
                 'rejection_reason' => null,
                 'is_active' => true,
             ]);
@@ -146,6 +162,12 @@ class ProfessionalProfileService
             $profile->fill([
                 'profile_role' => $nextRole,
                 'notes' => $payload['notes'] ?? $profile->notes,
+                'degree' => array_key_exists('degree', $payload) ? $payload['degree'] : $profile->degree,
+                'years_experience' => array_key_exists('years_experience', $payload) ? $payload['years_experience'] : $profile->years_experience,
+                'branch_id' => array_key_exists('branch_id', $payload) ? $payload['branch_id'] : $profile->branch_id,
+                'service_scope' => array_key_exists('service_scope', $payload)
+                    ? $this->normalizeServiceScope($payload['service_scope'])
+                    : $profile->service_scope,
             ]);
 
             if (! $selfService && isset($payload['status']) && in_array($payload['status'], [ProfessionalProfile::STATUS_DRAFT, ProfessionalProfile::STATUS_PENDING], true)) {
@@ -543,7 +565,7 @@ class ProfessionalProfileService
 
     private function assertSubmittable(ProfessionalProfile $profile): void
     {
-        $profile->loadMissing(['specialties', 'certificates']);
+        $profile->loadMissing('specialties', 'certificates');
         $this->assertProfilePayload($profile->profile_role, $profile->specialties->toArray(), $profile->certificates->toArray(), $profile->id);
     }
 
@@ -583,9 +605,35 @@ class ProfessionalProfileService
         }, array_filter($certificates, fn ($certificate) => ! empty(Arr::get($certificate, 'certificate_name')))));
     }
 
+    private function normalizeServiceScope($value): ?array
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : [];
+        }
+
+        if (! is_array($value)) {
+            return null;
+        }
+
+        $clean = collect($value)
+            ->map(fn ($item) => is_array($item) ? Arr::get($item, 'name') ?? Arr::get($item, 'value') : $item)
+            ->map(fn ($item) => is_string($item) ? trim($item) : null)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        return empty($clean) ? null : $clean;
+    }
+
     private function snapshot(ProfessionalProfile $profile): array
     {
-        $profile->loadMissing(['specialties', 'certificates']);
+        $profile->loadMissing('specialties', 'certificates');
 
         return [
             'id' => $profile->id,
@@ -593,6 +641,10 @@ class ProfessionalProfileService
             'profile_role' => $profile->profile_role,
             'status' => $profile->status,
             'notes' => $profile->notes,
+            'degree' => $profile->degree,
+            'years_experience' => $profile->years_experience,
+            'branch_id' => $profile->branch_id,
+            'service_scope' => $profile->service_scope,
             'rejection_reason' => $profile->rejection_reason,
             'submitted_at' => $profile->submitted_at?->toISOString(),
             'approved_at' => $profile->approved_at?->toISOString(),

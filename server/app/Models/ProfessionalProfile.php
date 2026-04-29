@@ -18,6 +18,10 @@ class ProfessionalProfile extends Model
         'profile_role',
         'status',
         'notes',
+        'degree',
+        'years_experience',
+        'branch_id',
+        'service_scope',
         'rejection_reason',
         'is_active',
         'submitted_at',
@@ -32,6 +36,8 @@ class ProfessionalProfile extends Model
         'submitted_at' => 'datetime',
         'approved_at' => 'datetime',
         'invalidated_at' => 'datetime',
+        'service_scope' => 'array',
+        'years_experience' => 'integer',
     ];
 
     protected $appends = [
@@ -42,6 +48,11 @@ class ProfessionalProfile extends Model
     public function staff()
     {
         return $this->belongsTo(Staff::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function approver()

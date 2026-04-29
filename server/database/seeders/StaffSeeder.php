@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Branch;
 use App\Models\Staff;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -10,6 +11,8 @@ class StaffSeeder extends Seeder
 {
     public function run(): void
     {
+        $branches = Branch::pluck('id', 'code');
+
         $rows = [
             [
                 'employee_code' => 'AD001',
@@ -19,6 +22,7 @@ class StaffSeeder extends Seeder
                 'role_slug' => 'admin',
                 'join_date' => '2024-01-10',
                 'status' => 'working',
+                'branch_code' => 'PK1-HN',
             ],
             [
                 'employee_code' => 'BS001',
@@ -28,6 +32,7 @@ class StaffSeeder extends Seeder
                 'role_slug' => 'bac_si',
                 'join_date' => '2024-02-15',
                 'status' => 'working',
+                'branch_code' => 'PK1-HN',
             ],
             [
                 'employee_code' => 'LT001',
@@ -37,6 +42,7 @@ class StaffSeeder extends Seeder
                 'role_slug' => 'le_tan',
                 'join_date' => '2024-03-01',
                 'status' => 'working',
+                'branch_code' => 'PK1-HN',
             ],
             [
                 'employee_code' => 'KT001',
@@ -46,6 +52,7 @@ class StaffSeeder extends Seeder
                 'role_slug' => 'ke_toan',
                 'join_date' => '2024-03-20',
                 'status' => 'working',
+                'branch_code' => 'PK2-HCM',
             ],
             [
                 'employee_code' => 'LT002',
@@ -55,16 +62,20 @@ class StaffSeeder extends Seeder
                 'role_slug' => 'le_tan',
                 'join_date' => '2024-04-05',
                 'status' => 'suspended',
+                'branch_code' => 'PK3-DN',
             ],
         ];
 
         foreach ($rows as $row) {
             $user = User::where('email', $row['email'])->first();
+            $branchId = $branches[$row['branch_code']] ?? null;
+            unset($row['branch_code']);
 
             Staff::updateOrCreate(
                 ['employee_code' => $row['employee_code']],
                 array_merge($row, [
                     'user_id' => $user?->id,
+                    'branch_id' => $branchId,
                 ])
             );
         }

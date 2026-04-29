@@ -51,6 +51,10 @@ export const createEmptyProfileForm = () => ({
   profile_role: '',
   status: 'draft',
   notes: '',
+  degree: '',
+  years_experience: '',
+  branch_id: '',
+  service_scope: [],
   specialties: [],
   certificates: [],
 });
@@ -77,6 +81,13 @@ export const mapProfileToForm = (profile) => {
     profile_role: profile.profile_role || '',
     status: profile.status || 'draft',
     notes: profile.notes || '',
+    degree: profile.degree || '',
+    years_experience:
+      profile.years_experience !== null && profile.years_experience !== undefined
+        ? String(profile.years_experience)
+        : '',
+    branch_id: profile.branch_id ? String(profile.branch_id) : '',
+    service_scope: Array.isArray(profile.service_scope) ? profile.service_scope : [],
     specialties,
     certificates: (profile.certificates || []).map((certificate) => ({
       id: certificate.id,
@@ -107,6 +118,16 @@ export const buildProfileFormData = (form, { selfService = false } = {}) => {
   }
 
   data.append('notes', form.notes || '');
+  if (form.degree !== undefined && form.degree !== null && form.degree !== '') {
+    data.append('degree', form.degree);
+  }
+  if (form.years_experience !== undefined && form.years_experience !== null && form.years_experience !== '') {
+    data.append('years_experience', String(form.years_experience));
+  }
+  if (form.branch_id) {
+    data.append('branch_id', String(form.branch_id));
+  }
+  data.append('service_scope_payload', JSON.stringify(form.service_scope || []));
   data.append('specialties_payload', JSON.stringify(form.specialties || []));
   data.append(
     'certificates_payload',
