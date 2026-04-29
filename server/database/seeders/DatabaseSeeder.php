@@ -18,5 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call(StaffSeeder::class);
         $this->call(ServiceSeeder::class);
         $this->call(ProfessionalProfileSeeder::class);
+        $this->call(WorkShiftTemplateSeeder::class);
     }
 }

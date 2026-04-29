@@ -61,4 +61,14 @@ class Staff extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+    public function workSchedules()
+    {
+        return $this->hasMany(WorkSchedule::class);
+    }
+
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
 }

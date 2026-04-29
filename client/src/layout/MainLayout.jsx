@@ -44,6 +44,8 @@ const MainLayout = () => {
     { icon: <FileText size={20} />, label: 'Quan ly hoa don', path: '/invoices', roles: ['admin', 'ke_toan'], permission: 'finance.view' },
     { icon: <TrendingUp size={20} />, label: 'Bao cao doanh thu', path: '/revenue', roles: ['admin', 'ke_toan'], permission: 'reports.view' },
     { icon: <BriefcaseMedical size={20} />, label: 'Ho so chuyen mon cua toi', path: '/my-professional-profile', roles: ['bac_si', 'ke_toan'] },
+    { icon: <Calendar size={20} />, label: 'Lich lam viec', path: '/work-schedules', roles: ['admin'], permission: 'schedules.view' },
+    { icon: <Calendar size={20} />, label: 'Lich lam viec cua toi', path: '/my-work-schedule', roles: ['bac_si', 'le_tan', 'ke_toan'] },
     { icon: <Calendar size={20} />, label: 'Lich hen cua toi', path: '/my-appointments', roles: ['benh_nhan'] },
     { icon: <ClipboardList size={20} />, label: 'Ho so suc khoe', path: '/health-records', roles: ['benh_nhan'] },
   ];

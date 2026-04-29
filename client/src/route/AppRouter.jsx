@@ -26,6 +26,8 @@ import RevenueReport from '@/page/RevenueReport';
 import MyAppointments from '@/page/MyAppointments';
 import HealthRecords from '@/page/HealthRecords';
 import MyProfessionalProfile from '@/page/MyProfessionalProfile';
+import WorkScheduleManagement from '@/page/WorkScheduleManagement';
+import MyWorkSchedule from '@/page/MyWorkSchedule';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useAuth();
@@ -86,6 +88,8 @@ const AppRouter = () => {
         <Route path="invoices" element={<PermissionRoute permission="finance.view"><InvoiceManagement /></PermissionRoute>} />
         <Route path="revenue" element={<PermissionRoute permission="reports.view"><RevenueReport /></PermissionRoute>} />
         <Route path="my-professional-profile" element={<MyProfessionalProfile />} />
+        <Route path="work-schedules" element={<PermissionRoute permission="schedules.view"><WorkScheduleManagement /></PermissionRoute>} />
+        <Route path="my-work-schedule" element={<MyWorkSchedule />} />
 
         <Route path="my-appointments" element={<MyAppointments />} />
         <Route path="health-records" element={<HealthRecords />} />

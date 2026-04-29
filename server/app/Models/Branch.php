@@ -26,4 +26,9 @@ class Branch extends Model
     {
         return $this->hasMany(ProfessionalProfile::class);
     }
+
+    public function workSchedules(): HasMany
+    {
+        return $this->hasMany(WorkSchedule::class);
+    }
 }

@@ -20,6 +20,7 @@ class PermissionSeeder extends Seeder
             'dental_records' => 'Kham nha khoa',
             'finance' => 'Tai chinh',
             'reports' => 'Bao cao',
+            'schedules' => 'Lich lam viec',
         ];
 
         $actions = [
