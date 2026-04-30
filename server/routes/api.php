@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\MyProfessionalProfileController;
 use App\Http\Controllers\Api\MyWorkScheduleController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfessionalProfileController;
+use App\Http\Controllers\Api\ServiceAttachmentController;
+use App\Http\Controllers\Api\ServiceCatalogController;
 use App\Http\Controllers\Api\ShiftSwapRequestController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\PermissionController;
@@ -21,6 +23,10 @@ Route::post('/auth/google', [AuthController::class, 'googleLogin']);
 Route::post('/password/forgot/send-otp', [PasswordResetController::class, 'sendResetOtp']);
 Route::post('/password/forgot/verify-otp', [PasswordResetController::class, 'verifyResetOtp']);
 Route::post('/password/forgot/reset', [PasswordResetController::class, 'resetPassword']);
+
+// Public API - Danh muc dich vu cong khai (khong can dang nhap)
+Route::get('/public/services', [ServiceCatalogController::class, 'publicIndex']);
+Route::get('/public/service-groups', [ServiceCatalogController::class, 'groups']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -53,6 +59,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/work-schedules/{schedule}/leave-request', [LeaveRequestController::class, 'store'])->whereNumber('schedule');
     Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
     Route::post('/shift-swap-requests', [ShiftSwapRequestController::class, 'store']);
+
+    // Service Catalog - cho moi user da dang nhap (RBAC xu ly trong controller)
+    Route::get('/services', [ServiceCatalogController::class, 'index']);
+    Route::get('/services/{id}', [ServiceCatalogController::class, 'show'])->whereNumber('id');
+    Route::get('/service-groups', [ServiceCatalogController::class, 'groups']);
+    Route::get('/specialties', [ServiceCatalogController::class, 'specialties']);
+
+    // Attachment - doc danh sach & download
+    Route::get('/services/{serviceId}/attachments', [ServiceAttachmentController::class, 'index'])->whereNumber('serviceId');
+    Route::get('/services/{serviceId}/attachments/{attachmentId}/download', [ServiceAttachmentController::class, 'download'])->whereNumber(['serviceId', 'attachmentId']);
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
@@ -103,5 +119,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/shift-swap-requests', [ShiftSwapRequestController::class, 'index']);
         Route::post('/shift-swap-requests/{swap}/approve', [ShiftSwapRequestController::class, 'approve'])->whereNumber('swap');
         Route::post('/shift-swap-requests/{swap}/reject', [ShiftSwapRequestController::class, 'reject'])->whereNumber('swap');
+
+        // Service Catalog Management (admin only)
+        Route::post('/services', [ServiceCatalogController::class, 'store']);
+        Route::put('/services/{id}', [ServiceCatalogController::class, 'update'])->whereNumber('id');
+        Route::put('/services/{id}/status', [ServiceCatalogController::class, 'changeStatus'])->whereNumber('id');
+        Route::delete('/services/{id}', [ServiceCatalogController::class, 'destroy'])->whereNumber('id');
+        Route::get('/services/audit-logs', [ServiceCatalogController::class, 'auditLogs']);
+
+        // Service Attachments Management (admin only)
+        Route::post('/services/{serviceId}/attachments', [ServiceAttachmentController::class, 'store'])->whereNumber('serviceId');
+        Route::delete('/services/{serviceId}/attachments/{attachmentId}', [ServiceAttachmentController::class, 'destroy'])->whereNumber(['serviceId', 'attachmentId']);
     });
 });

@@ -21,6 +21,7 @@ class PermissionSeeder extends Seeder
             'finance' => 'Tai chinh',
             'reports' => 'Bao cao',
             'schedules' => 'Lich lam viec',
+            'services' => 'Dich vu nha khoa',
         ];
 
         $actions = [
@@ -47,9 +48,17 @@ class PermissionSeeder extends Seeder
             }
         }
 
+        // Admin nhan toan bo quyen
         $adminRole = Role::where('slug', 'admin')->first();
         if ($adminRole) {
             $adminRole->permissions()->sync($permissionIds);
+        }
+
+        // Non-admin roles nhan quyen mac dinh services.view
+        $defaultServicePermissions = Permission::where('slug', 'services.view')->pluck('id')->toArray();
+        $nonAdminRoles = Role::where('slug', '!=', 'admin')->get();
+        foreach ($nonAdminRoles as $role) {
+            $role->permissions()->syncWithoutDetaching($defaultServicePermissions);
         }
     }
 }
